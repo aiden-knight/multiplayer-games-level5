@@ -6,9 +6,10 @@ namespace Multiplayer_Games_Programming_Server
 {
 	internal class ConnectedClient
 	{
+		public Socket m_socket;
 		public ConnectedClient(Socket socket)
 		{
-			
+			m_socket = socket;
 		}
 
 		public void Close()
