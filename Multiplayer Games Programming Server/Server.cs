@@ -10,7 +10,9 @@ namespace Multiplayer_Games_Programming_Server
 	{
 		TcpListener m_TcpListener;
 
+		int m_ID;
 		ConcurrentDictionary<int, ConnectedClient> m_Clients;
+		object m_ConsoleLock = new object();
 
 		public Server(string ipAddress, int port)
 		{
@@ -18,6 +20,7 @@ namespace Multiplayer_Games_Programming_Server
 			m_TcpListener = new TcpListener(ip, port);
 
 			m_Clients = new ConcurrentDictionary<int, ConnectedClient>();
+			m_ID = 0;
 		}
 
 		public void Start()
@@ -27,12 +30,19 @@ namespace Multiplayer_Games_Programming_Server
                 m_TcpListener.Start();
                 Console.WriteLine("Server Started....");
 
-                Socket socket = m_TcpListener.AcceptSocket();
-                Console.WriteLine("Connection made");
-                ConnectedClient client = new ConnectedClient(socket);
+				while(true)
+				{
+                    Socket socket = m_TcpListener.AcceptSocket();
+                    ConnectedClient client = new ConnectedClient(socket);
 
-                m_Clients.TryAdd(0, client);
-                ClientMethod(0);
+                    int currentID = m_ID++;
+                    Console.WriteLine("Connection made with ID: {0}", currentID);
+
+                    m_Clients.TryAdd(currentID, client);
+                    Thread clientThread = new Thread(() => ClientMethod(currentID));
+                    clientThread.Name = string.Format("ClientThread ID: {0}", currentID);
+                    clientThread.Start();
+                }
             }
 			catch(Exception ex)
 			{
@@ -47,29 +57,18 @@ namespace Multiplayer_Games_Programming_Server
 
 		private void ClientMethod(int index)
 		{
-			try
-			{
-				string message;
-				NetworkStream stream = new NetworkStream(m_Clients[index].m_socket, false);
-				StreamReader reader = new StreamReader(stream, Encoding.UTF8);
-				StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
+			string message = m_Clients[index].Read();
 
-				while((message = reader.ReadLine()) != null)
-				{
-					Console.WriteLine("Recieved Message - {0}", message);
+            lock (m_ConsoleLock)
+			{
+                Console.WriteLine(message);
+            }
 
-					writer.WriteLine("Logged in");
-					writer.Flush();
-				}
-			}
-			catch(Exception ex)
-			{
-                Console.WriteLine(ex.Message);
-            }
-			finally
-			{
-                m_Clients[index].m_socket.Close();
-            }
+			m_Clients[index].Send(string.Format("You successfully logend in with ID: {0}",index));
+
+			while (true) ;
+			m_Clients[index].Close();
+			m_Clients.TryRemove(index, out _);
 		}
 	}
 }

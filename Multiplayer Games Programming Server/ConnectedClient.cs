@@ -1,4 +1,7 @@
-﻿using System.Net.Sockets;
+﻿using System;
+using System.IO;
+using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using Multiplayer_Games_Programming_Packet_Library;
 
@@ -6,24 +9,51 @@ namespace Multiplayer_Games_Programming_Server
 {
 	internal class ConnectedClient
 	{
-		public Socket m_socket;
-		public ConnectedClient(Socket socket)
+		Socket m_socket;
+		NetworkStream m_stream;
+        StreamReader m_reader;
+        StreamWriter m_writer;
+        public ConnectedClient(Socket socket)
 		{
 			m_socket = socket;
-		}
+
+			m_stream = new NetworkStream(m_socket, false);
+            m_reader = new StreamReader(m_stream, Encoding.UTF8);
+            m_writer = new StreamWriter(m_stream, Encoding.UTF8);
+        }
 
 		public void Close()
 		{
-			
-		}
+            m_socket.Close();
+        }
 
-		//public string Read()
-		//{
-			
-		//}
-
-		//public void Send(string message)
-		//{
-		//}
+		public string Read()
+		{
+            try
+            {
+                string message = string.Empty;
+                while ((message = m_reader.ReadLine()) != null)
+                {
+                    return message;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return string.Empty;
+        }
+        public void Send(string message)
+		{
+            try
+            {
+                m_writer.WriteLine(message);
+                m_writer.Flush();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
 	}
 }

@@ -79,7 +79,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 				{
 					string message = m_StreamReader.ReadLine();
 
-					Debug.WriteLine(message);
+                    Debug.WriteLine(message);
 				}
 			}
 			catch(Exception ex)
