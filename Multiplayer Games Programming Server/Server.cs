@@ -57,12 +57,21 @@ namespace Multiplayer_Games_Programming_Server
 
 		private void ClientMethod(int index)
 		{
-			string message = m_Clients[index].Read();
+			string packetJSON = m_Clients[index].Read();
 
-            lock (m_ConsoleLock)
+			Packet? p = Packet.Deserialize(packetJSON);
+			if (p != null)
 			{
-                Console.WriteLine(message);
-            }
+				if(p.m_Type == PacketType.MESSAGE)
+				{
+					string message = ((MessagePacket)p).message;
+
+                    lock (m_ConsoleLock)
+                    {
+                        Console.WriteLine(message);
+                    }
+                }
+			}
 
 			m_Clients[index].Send(string.Format("You successfully logend in with ID: {0}",index));
 

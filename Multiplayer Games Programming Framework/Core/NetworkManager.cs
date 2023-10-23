@@ -8,6 +8,7 @@ using Multiplayer_Games_Programming_Packet_Library;
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using System.Net;
+using System.Xml;
 
 namespace Multiplayer_Games_Programming_Framework.Core
 {
@@ -67,8 +68,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			tcpThread.Name = "TCP THREAD";
             tcpThread.Start();
 
-            m_StreamWriter.WriteLine("Connected and listening");
-            m_StreamWriter.Flush();
+			TCPSendMessage("Connected and listening");
         }
 
 		private void TcpProcessServerResponse()
@@ -77,9 +77,18 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			{
 				while(m_TcpClient.Connected)
 				{
-					string message = m_StreamReader.ReadLine();
+                    string packetJSON = m_StreamReader.ReadLine();
 
-                    Debug.WriteLine(message);
+                    Packet? p = Packet.Deserialize(packetJSON);
+                    if (p != null)
+                    {
+                        if (p.m_Type == PacketType.MESSAGE)
+                        {
+                            string message = ((MessagePacket)p).message;
+
+                            Debug.WriteLine(message);
+                        }
+                    }
 				}
 			}
 			catch(Exception ex)
@@ -90,7 +99,11 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
 		public void TCPSendMessage(string message)
 		{
-		}
+            MessagePacket packet = new MessagePacket(message);
+            string data = packet.ToJson();
+            m_StreamWriter.WriteLine(data);
+            m_StreamWriter.Flush();
+        }
 
 		public void Login()
 		{

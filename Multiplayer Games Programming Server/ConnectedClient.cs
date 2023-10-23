@@ -31,10 +31,10 @@ namespace Multiplayer_Games_Programming_Server
 		{
             try
             {
-                string message = string.Empty;
-                while ((message = m_reader.ReadLine()) != null)
+                string packetJSON = string.Empty;
+                while ((packetJSON = m_reader.ReadLine()) != null)
                 {
-                    return message;
+                    return packetJSON;
                 }
             }
             catch (Exception ex)
@@ -47,7 +47,9 @@ namespace Multiplayer_Games_Programming_Server
 		{
             try
             {
-                m_writer.WriteLine(message);
+                MessagePacket packet = new MessagePacket(message);
+                string data = packet.ToJson();
+                m_writer.WriteLine(data);
                 m_writer.Flush();
             }
             catch (Exception ex)
