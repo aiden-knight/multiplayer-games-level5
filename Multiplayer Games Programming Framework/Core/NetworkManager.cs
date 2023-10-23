@@ -77,17 +77,20 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			{
 				while(m_TcpClient.Connected)
 				{
-                    string packetJSON = m_StreamReader.ReadLine();
-
+                    string? packetJSON = m_StreamReader.ReadLine();
+					if (packetJSON == null) continue;
+					
                     Packet? p = Packet.Deserialize(packetJSON);
-                    if (p != null)
-                    {
-                        if (p.m_Type == PacketType.MESSAGE)
-                        {
+					if (p == null) continue;
+                    
+					PacketType type = p.m_Type;
+					switch (type)
+					{
+						case PacketType.MESSAGE:
                             string message = ((MessagePacket)p).message;
 
                             Debug.WriteLine(message);
-                        }
+						break;
                     }
 				}
 			}
@@ -107,6 +110,10 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
 		public void Login()
 		{
+			LoginPacket packet = new LoginPacket();
+			string data = packet.ToJson();
+			m_StreamWriter.WriteLine(data);
+			m_StreamWriter.Flush();
 		}
 	}
 }

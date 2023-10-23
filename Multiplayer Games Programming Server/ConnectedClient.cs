@@ -10,16 +10,15 @@ namespace Multiplayer_Games_Programming_Server
 	internal class ConnectedClient
 	{
 		Socket m_socket;
-		NetworkStream m_stream;
         StreamReader m_reader;
         StreamWriter m_writer;
         public ConnectedClient(Socket socket)
 		{
 			m_socket = socket;
 
-			m_stream = new NetworkStream(m_socket, false);
-            m_reader = new StreamReader(m_stream, Encoding.UTF8);
-            m_writer = new StreamWriter(m_stream, Encoding.UTF8);
+			NetworkStream stream = new NetworkStream(m_socket, false);
+            m_reader = new StreamReader(stream, Encoding.UTF8);
+            m_writer = new StreamWriter(stream, Encoding.UTF8);
         }
 
 		public void Close()
@@ -31,7 +30,7 @@ namespace Multiplayer_Games_Programming_Server
 		{
             try
             {
-                string packetJSON = string.Empty;
+                string? packetJSON = string.Empty;
                 while ((packetJSON = m_reader.ReadLine()) != null)
                 {
                     return packetJSON;

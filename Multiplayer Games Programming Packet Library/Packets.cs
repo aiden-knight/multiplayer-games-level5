@@ -11,6 +11,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
 		EMPTY,
 		MESSAGE,
 		POSITION,
+		LOGIN,
 	}
 
 	public abstract class Packet
@@ -68,6 +69,8 @@ namespace Multiplayer_Games_Programming_Packet_Library
 							return JsonSerializer.Deserialize<MessagePacket>(root.GetRawText(), options);
                         case (byte)PacketType.POSITION:
 							return JsonSerializer.Deserialize<PositionPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.LOGIN:
+							return JsonSerializer.Deserialize<LoginPacket>(root.GetRawText(), options);
 					}
 				}
 			}
@@ -112,7 +115,15 @@ namespace Multiplayer_Games_Programming_Packet_Library
 		}
 	}
 
-	public class EmptyPacket : Packet
+    public class LoginPacket : Packet
+    {
+        public LoginPacket()
+        {
+            m_Type = PacketType.LOGIN;
+        }
+    }
+
+    public class EmptyPacket : Packet
 	{
         public EmptyPacket()
 		{

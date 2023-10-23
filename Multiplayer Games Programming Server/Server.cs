@@ -12,6 +12,8 @@ namespace Multiplayer_Games_Programming_Server
 
 		int m_ID;
 		ConcurrentDictionary<int, ConnectedClient> m_Clients;
+		bool m_running;
+
 		object m_ConsoleLock = new object();
 
 		public Server(string ipAddress, int port)
@@ -21,6 +23,7 @@ namespace Multiplayer_Games_Programming_Server
 
 			m_Clients = new ConcurrentDictionary<int, ConnectedClient>();
 			m_ID = 0;
+			m_running = false;
 		}
 
 		public void Start()
@@ -29,14 +32,18 @@ namespace Multiplayer_Games_Programming_Server
 			{
                 m_TcpListener.Start();
                 Console.WriteLine("Server Started....");
+				m_running = true;
 
-				while(true)
+				while(m_running)
 				{
                     Socket socket = m_TcpListener.AcceptSocket();
                     ConnectedClient client = new ConnectedClient(socket);
 
                     int currentID = m_ID++;
-                    Console.WriteLine("Connection made with ID: {0}", currentID);
+                    lock (m_ConsoleLock)
+                    {
+                        Console.WriteLine("Connection made with ID: {0}", currentID);
+                    }
 
                     m_Clients.TryAdd(currentID, client);
                     Thread clientThread = new Thread(() => ClientMethod(currentID));
@@ -52,30 +59,38 @@ namespace Multiplayer_Games_Programming_Server
 
 		public void Stop()
 		{
+			m_running = false;
+			
 			m_TcpListener.Stop();
 		}
 
 		private void ClientMethod(int index)
 		{
-			string packetJSON = m_Clients[index].Read();
-
-			Packet? p = Packet.Deserialize(packetJSON);
-			if (p != null)
+            while (m_running)
 			{
-				if(p.m_Type == PacketType.MESSAGE)
-				{
-					string message = ((MessagePacket)p).message;
+                string packetJSON = m_Clients[index].Read();
 
-                    lock (m_ConsoleLock)
-                    {
-                        Console.WriteLine(message);
+                Packet? p = Packet.Deserialize(packetJSON);
+                if (p != null)
+                {
+					PacketType type = p.m_Type;
+					switch (type)
+					{
+						case PacketType.MESSAGE:
+                            string message = ((MessagePacket)p).message;
+
+                            lock (m_ConsoleLock)
+                            {
+                                Console.WriteLine(message);
+                            }
+						break;
+						case PacketType.LOGIN:
+                            m_Clients[index].Send(string.Format("You successfully logend in with ID: {0}", index));
+                        break;
                     }
                 }
-			}
-
-			m_Clients[index].Send(string.Format("You successfully logend in with ID: {0}",index));
-
-			while (true) ;
+            }
+			
 			m_Clients[index].Close();
 			m_Clients.TryRemove(index, out _);
 		}
