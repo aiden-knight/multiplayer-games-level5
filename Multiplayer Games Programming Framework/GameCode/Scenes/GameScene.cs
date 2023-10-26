@@ -41,7 +41,7 @@ namespace Multiplayer_Games_Programming_Framework
 			m_Ball = GameObject.Instantiate<BallGO>(this, new Transform(new Vector2(screenWidth / 2, screenHeight / 2), new Vector2(1, 1), 0));
 			m_BallController = m_Ball.GetComponent<BallControllerComponent>();
 
-			//if (NetworkManager.m_Instance.m_Index == 0)
+			if (NetworkManager.m_Instance.m_ID == 0)
 			{
 				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100, 500), new Vector2(5, 20), 0));
 				m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
@@ -49,14 +49,14 @@ namespace Multiplayer_Games_Programming_Framework
 				m_RemotePaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - 100, 500), new Vector2(5, 20), 0));
 				m_RemotePaddle.AddComponent(new PaddleNetworkController(m_RemotePaddle, 1));
 			}
-			//else
-			//{
-			//	m_RemotePaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100, 500), new Vector2(5, 20), 0));
-			//	m_RemotePaddle.AddComponent(new PaddleNetworkController(m_RemotePaddle, 0));
+			else
+			{
+				m_RemotePaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100, 500), new Vector2(5, 20), 0));
+				m_RemotePaddle.AddComponent(new PaddleNetworkController(m_RemotePaddle, 0));
 
-			//	m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - 100, 500), new Vector2(5, 20), 0));
-			//	m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
-			//}
+				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - 100, 500), new Vector2(5, 20), 0));
+				m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
+			}
 
 			//Border
 			Vector2[] wallPos = new Vector2[]
@@ -117,7 +117,6 @@ namespace Multiplayer_Games_Programming_Framework
 					break;
 
 				case GameModeState.PLAYING:
-
 					if(m_GameTimer > 60)
 					{
 						m_Ball.Destroy();

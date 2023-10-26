@@ -3,6 +3,7 @@ using Myra.Graphics2D.UI;
 using nkast.Aether.Physics2D.Dynamics;
 using Multiplayer_Games_Programming_Framework.Core;
 using System.Diagnostics;
+using Multiplayer_Games_Programming_Packet_Library;
 
 namespace Multiplayer_Games_Programming_Framework
 {
@@ -36,7 +37,7 @@ namespace Multiplayer_Games_Programming_Framework
 			};
 
 			int cols = 4;
-			for(int i = 0; i < cols; ++i)
+			for (int i = 0; i < cols; ++i)
 			{
 				grid.ColumnsProportions.Add(new Proportion(ProportionType.Part));
 			}
@@ -72,6 +73,7 @@ namespace Multiplayer_Games_Programming_Framework
 			PlayButton.Width = (Constants.m_ScreenWidth / cols) * LoginButton.GridColumnSpan;
 			PlayButton.Height = (Constants.m_ScreenHeight / rows) * LoginButton.GridRowSpan;
 			PlayButton.Enabled = false;
+			PlayButton.Id = "PlayButton";
 			grid.Widgets.Add(PlayButton);
 
 			PlayButton.Click += (s, a) =>
@@ -82,15 +84,15 @@ namespace Multiplayer_Games_Programming_Framework
 			var childPanel = new Panel();
 			childPanel.GridColumn = 0;
 			childPanel.GridRow = 0;
-			
+
 			grid.Widgets.Add(childPanel);
 
 			LoginButton.Click += (s, a) =>
 			{
 				if (NetworkManager.m_Instance.Connect("127.0.0.1", 4444))
 				{
-					PlayButton.Enabled = true;
 					NetworkManager.m_Instance.Login();
+					LoginButton.Enabled = false;
 				}
 				else
 				{
@@ -103,6 +105,16 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			base.Draw(deltaTime);
 			m_Desktop.Render();
+		}
+
+		public override void Update(float deltaTime)
+		{
+			base.Update(deltaTime);
+
+			if(NetworkManager.m_Instance.m_Playable)
+			{
+				m_Desktop.GetWidgetByID("PlayButton").Enabled = true;
+			}
 		}
 	}
 }

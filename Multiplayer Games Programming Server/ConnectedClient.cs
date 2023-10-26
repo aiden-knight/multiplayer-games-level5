@@ -12,9 +12,11 @@ namespace Multiplayer_Games_Programming_Server
 		Socket m_socket;
         StreamReader m_reader;
         StreamWriter m_writer;
-        public ConnectedClient(Socket socket)
+        public int m_ID { get; private set; }
+        public ConnectedClient(Socket socket, int ID)
 		{
 			m_socket = socket;
+            m_ID = ID;
 
 			NetworkStream stream = new NetworkStream(m_socket, false);
             m_reader = new StreamReader(stream, Encoding.UTF8);
@@ -47,6 +49,20 @@ namespace Multiplayer_Games_Programming_Server
             try
             {
                 MessagePacket packet = new MessagePacket(message);
+                string data = packet.ToJson();
+                m_writer.WriteLine(data);
+                m_writer.Flush();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public void SendPacket(Packet packet)
+        {
+            try
+            {
                 string data = packet.ToJson();
                 m_writer.WriteLine(data);
                 m_writer.Flush();

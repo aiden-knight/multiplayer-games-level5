@@ -12,6 +12,15 @@ using System.Xml;
 
 namespace Multiplayer_Games_Programming_Framework.Core
 {
+	public class PositionEventArgs : EventArgs
+	{
+		public PositionEventArgs(Vector2 position)
+		{
+			this.position = position;
+		}
+		public Vector2 position;
+	}
+
 	internal class NetworkManager
 	{
 		private static NetworkManager Instance;
@@ -33,11 +42,16 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		NetworkStream m_Stream;
 		StreamReader m_StreamReader;
 		StreamWriter m_StreamWriter;
+		public int m_ID { get; private set; }
+		public bool m_Playable { get; private set; }
 
+		public event EventHandler<PositionEventArgs> PositionEvent;
 
 		NetworkManager()
 		{
 			m_TcpClient = new TcpClient();
+            m_ID = -1;
+			m_Playable = false;
 		}
 
 		public bool Connect(string ip, int port)
@@ -67,8 +81,6 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			Thread tcpThread = new Thread(new ThreadStart(TcpProcessServerResponse));
 			tcpThread.Name = "TCP THREAD";
             tcpThread.Start();
-
-			TCPSendMessage("Connected and listening");
         }
 
 		private void TcpProcessServerResponse()
@@ -88,8 +100,19 @@ namespace Multiplayer_Games_Programming_Framework.Core
 					{
 						case PacketType.MESSAGE:
                             string message = ((MessagePacket)p).message;
-
                             Debug.WriteLine(message);
+						break;
+						case PacketType.LOGIN:
+							LoginPacket loginPacket = (LoginPacket)p;
+							m_ID = loginPacket.ID;
+						break;
+						case PacketType.GAME_READY:
+							m_Playable = true;
+						break;
+						case PacketType.POSITION:
+							PositionPacket posPacket = (PositionPacket)p;
+							Vector2 pos = new Vector2(posPacket.x, posPacket.y);
+							PositionEvent.Invoke(this, new PositionEventArgs(pos));
 						break;
                     }
 				}
@@ -115,5 +138,13 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			m_StreamWriter.WriteLine(data);
 			m_StreamWriter.Flush();
 		}
+
+		public void SendPosition(Vector2 pos)
+		{
+			PositionPacket packet = new PositionPacket(pos.X, pos.Y);
+            string data = packet.ToJson();
+            m_StreamWriter.WriteLine(data);
+            m_StreamWriter.Flush();
+        }
 	}
 }

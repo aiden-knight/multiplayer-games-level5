@@ -37,9 +37,10 @@ namespace Multiplayer_Games_Programming_Server
 				while(m_running)
 				{
                     Socket socket = m_TcpListener.AcceptSocket();
-                    ConnectedClient client = new ConnectedClient(socket);
-
                     int currentID = m_ID++;
+
+                    ConnectedClient client = new ConnectedClient(socket, currentID);
+
                     lock (m_ConsoleLock)
                     {
                         Console.WriteLine("Connection made with ID: {0}", currentID);
@@ -49,6 +50,15 @@ namespace Multiplayer_Games_Programming_Server
                     Thread clientThread = new Thread(() => ClientMethod(currentID));
                     clientThread.Name = string.Format("ClientThread ID: {0}", currentID);
                     clientThread.Start();
+
+					if(m_Clients.Count == 2)
+					{
+						foreach(ConnectedClient connectedClient in m_Clients.Values)
+						{
+							GameReadyPacket packet = new GameReadyPacket();
+							connectedClient.SendPacket(packet);
+						}
+					}
                 }
             }
 			catch(Exception ex)
@@ -64,11 +74,11 @@ namespace Multiplayer_Games_Programming_Server
 			m_TcpListener.Stop();
 		}
 
-		private void ClientMethod(int index)
+		private void ClientMethod(int ID)
 		{
             while (m_running)
 			{
-                string packetJSON = m_Clients[index].Read();
+                string packetJSON = m_Clients[ID].Read();
 
                 Packet? p = Packet.Deserialize(packetJSON);
                 if (p != null)
@@ -85,14 +95,23 @@ namespace Multiplayer_Games_Programming_Server
                             }
 						break;
 						case PacketType.LOGIN:
-                            m_Clients[index].Send(string.Format("You successfully logend in with ID: {0}", index));
-                        break;
+							LoginPacket loginPacket = new LoginPacket(ID);
+							m_Clients[ID].SendPacket(loginPacket);
+						break;
+						case PacketType.POSITION:
+							PositionPacket posPacket = (PositionPacket)p;
+							foreach(ConnectedClient client in m_Clients.Values)
+							{
+								if(client.m_ID == ID)continue;
+								client.SendPacket(posPacket);
+							}
+						break;
                     }
                 }
             }
 			
-			m_Clients[index].Close();
-			m_Clients.TryRemove(index, out _);
+			m_Clients[ID].Close();
+			m_Clients.TryRemove(ID, out _);
 		}
 	}
 }
