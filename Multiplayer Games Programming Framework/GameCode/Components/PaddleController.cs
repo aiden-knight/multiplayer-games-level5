@@ -10,6 +10,7 @@ namespace Multiplayer_Games_Programming_Framework
 	{
 		float m_Speed;
 		Rigidbody m_Rigidbody;
+		Vector2 m_PriorInput;
 		public PaddleController(GameObject gameObject) : base(gameObject)
 		{
 			m_Speed = 10;
@@ -18,6 +19,7 @@ namespace Multiplayer_Games_Programming_Framework
 		protected override void Start(float deltaTime)
 		{
 			m_Rigidbody = m_GameObject.GetComponent<Rigidbody>();
+			m_PriorInput = Vector2.Zero;
 		}
 
 		protected override void Update(float deltaTime)
@@ -27,13 +29,13 @@ namespace Multiplayer_Games_Programming_Framework
 			if (Keyboard.GetState().IsKeyDown(Keys.Up)) { input.Y = -1; }
 			if (Keyboard.GetState().IsKeyDown(Keys.Down)) { input.Y = 1; }
 
-			if(input != Vector2.Zero)
-			{
-                Vector2 pos = m_Transform.Position;
-                NetworkManager.m_Instance.SendPosition(pos);
-            }
-
 			m_Rigidbody.m_Body.LinearVelocity = (m_Transform.Up * input.Y * m_Speed);
-		}
+
+			if(m_PriorInput != input)
+			{
+				NetworkManager.m_Instance.SendPosition(input);
+				m_PriorInput = input;
+			}
+        }
 	}
 }

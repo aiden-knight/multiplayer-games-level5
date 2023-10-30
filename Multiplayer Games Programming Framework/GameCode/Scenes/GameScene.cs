@@ -121,13 +121,14 @@ namespace Multiplayer_Games_Programming_Framework
 					{
 						m_Ball.Destroy();
 						m_GameModeState = GameModeState.ENDING;
-					}
+                        Debug.WriteLine("Game Over");
+                    }
 
 					break;
 
 				case GameModeState.ENDING:
 
-					Debug.WriteLine("Game Over");
+					//Debug.WriteLine("Game Over");
 					break;
 				default:
 					break;
