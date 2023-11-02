@@ -9,7 +9,7 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
 		int m_Index;
 		float m_Speed;
 		Rigidbody m_Rigidbody;
-		Vector2 m_Input;
+		Vector2 m_Position;
 
 		public PaddleNetworkController(GameObject gameObject, int index) : base(gameObject)
 		{
@@ -21,17 +21,17 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
 		protected override void Start(float deltaTime)
 		{
 			m_Rigidbody = m_GameObject.GetComponent<Rigidbody>();
-            m_Input = Vector2.Zero;
+			m_Position = m_Rigidbody.m_Transform.Position;
         }
 
         protected override void Update(float deltaTime)
         {
-            m_Rigidbody.m_Body.LinearVelocity = (m_Transform.Up * m_Input.Y * m_Speed);
+            m_Rigidbody.UpdatePosition(m_Position);
         }
 
 		public void PositionEvent(object sender, PositionEventArgs e)
 		{
-			m_Input = e.position;
+            m_Position = e.position;
 		}
 	}
 }

@@ -112,7 +112,10 @@ namespace Multiplayer_Games_Programming_Framework.Core
 						case PacketType.POSITION:
 							PositionPacket posPacket = (PositionPacket)p;
 							Vector2 pos = new Vector2(posPacket.x, posPacket.y);
-							PositionEvent.Invoke(this, new PositionEventArgs(pos));
+							if(PositionEvent != null)
+							{
+                                PositionEvent.Invoke(this, new PositionEventArgs(pos));
+                            }
 						break;
                     }
 				}

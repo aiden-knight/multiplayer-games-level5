@@ -31,11 +31,7 @@ namespace Multiplayer_Games_Programming_Framework
 
 			m_Rigidbody.m_Body.LinearVelocity = (m_Transform.Up * input.Y * m_Speed);
 
-			if(m_PriorInput != input)
-			{
-				NetworkManager.m_Instance.SendPosition(input);
-				m_PriorInput = input;
-			}
-        }
+			NetworkManager.m_Instance.SendPosition(m_Transform.Position);
+		}
 	}
 }
