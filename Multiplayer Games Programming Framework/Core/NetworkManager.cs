@@ -47,11 +47,24 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
 		public event EventHandler<PositionEventArgs> PositionEvent;
 
+        /// <summary>
+        /// Similar to above but easier, would call with
+        /// <code>
+		/// Vector2 data = Vector2.Zero;
+        ///	foreach (var action in m_PositionActions)
+		///	{
+		///		action?.Invoke(data);
+		///	}
+		///	</code>
+        /// </summary>
+        public List<Action<Vector2>> m_PositionActions;
+
 		NetworkManager()
 		{
 			m_TcpClient = new TcpClient();
             m_ID = -1;
 			m_Playable = false;
+			m_PositionActions = new List<Action<Vector2>>();
 		}
 
 		public bool Connect(string ip, int port)
