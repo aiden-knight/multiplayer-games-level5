@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Reflection.PortableExecutable;
 using System.Text;
@@ -9,6 +10,8 @@ namespace Multiplayer_Games_Programming_Server
 {
 	internal class ConnectedClient
 	{
+        IPEndPoint m_udpEndPoint;
+
 		Socket m_socket;
         StreamReader m_reader;
         StreamWriter m_writer;
@@ -72,5 +75,18 @@ namespace Multiplayer_Games_Programming_Server
                 Console.WriteLine(ex.Message);
             }
         }
-	}
+
+        public void SetEndPoint(IPEndPoint endPoint)
+        {
+            m_udpEndPoint = endPoint;
+        }
+
+        public void SendPacketUdp(UdpClient udpListener, Packet packet)
+        {
+            string data = packet.ToJson();
+            byte[] bytes = Encoding.UTF8.GetBytes(data);
+
+            udpListener.SendAsync(bytes, bytes.Length, m_udpEndPoint);
+        }
+    }
 }

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using System.Net;
 using System.Xml;
+using System.Threading.Tasks;
 
 namespace Multiplayer_Games_Programming_Framework.Core
 {
@@ -39,6 +40,9 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		}
 		
 		TcpClient m_TcpClient;
+		UdpClient m_UdpClient;
+		bool m_UdpHandshakeCompleted = false;
+
 		NetworkStream m_Stream;
 		StreamReader m_StreamReader;
 		StreamWriter m_StreamWriter;
@@ -62,6 +66,8 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		NetworkManager()
 		{
 			m_TcpClient = new TcpClient();
+			m_UdpClient = new UdpClient();
+
             m_ID = -1;
 			m_Playable = false;
 			m_PositionActions = new List<Action<Vector2>>();
@@ -73,8 +79,9 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			{
                 IPAddress iPAddress = IPAddress.Parse(ip);
                 m_TcpClient.Connect(iPAddress, port);
-				m_Stream = m_TcpClient.GetStream();
+				m_UdpClient.Connect(iPAddress, port);
 
+				m_Stream = m_TcpClient.GetStream();
                 m_StreamReader = new StreamReader(m_Stream, Encoding.UTF8);
                 m_StreamWriter = new StreamWriter(m_Stream, Encoding.UTF8);
 
@@ -91,9 +98,12 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
 		public void Run()
 		{
+			UdpProcessServerResponse();
+
 			Thread tcpThread = new Thread(new ThreadStart(TcpProcessServerResponse));
 			tcpThread.Name = "TCP THREAD";
             tcpThread.Start();
+
         }
 
 		private void TcpProcessServerResponse()
@@ -118,6 +128,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 						case PacketType.LOGIN:
 							LoginPacket loginPacket = (LoginPacket)p;
 							m_ID = loginPacket.ID;
+							SendPacketUdp(loginPacket);
 						break;
 						case PacketType.GAME_READY:
 							m_Playable = true;
@@ -125,10 +136,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 						case PacketType.POSITION:
 							PositionPacket posPacket = (PositionPacket)p;
 							Vector2 pos = new Vector2(posPacket.x, posPacket.y);
-							if(PositionEvent != null)
-							{
-                                PositionEvent.Invoke(this, new PositionEventArgs(pos));
-                            }
+                            PositionEvent?.Invoke(this, new PositionEventArgs(pos));
 						break;
                     }
 				}
@@ -139,28 +147,74 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			}
 		}
 
-		public void TCPSendMessage(string message)
+        async Task UdpProcessServerResponse()
+        {
+            try
+            {
+                while (m_TcpClient.Connected)
+                {
+                    UdpReceiveResult receiveResult = await m_UdpClient.ReceiveAsync();
+                    byte[] receivedData = receiveResult.Buffer;
+
+                    string packetJSON = Encoding.UTF8.GetString(receivedData, 0, receivedData.Length);
+
+                    Packet? p = Packet.Deserialize(packetJSON);
+                    if (p == null) continue;
+
+                    PacketType type = p.m_Type;
+                    switch (type)
+                    {
+                        case PacketType.LOGIN:
+							m_UdpHandshakeCompleted = true;
+							Debug.WriteLine("UDP Handshake Completed");
+                        break;
+                    }
+                }
+            }
+            catch (SocketException e)
+            {
+                Debug.WriteLine("Client UDP Read Method exception: " + e.Message);
+            }
+        }
+
+        public void TCPSendMessage(string message)
 		{
             MessagePacket packet = new MessagePacket(message);
             string data = packet.ToJson();
             m_StreamWriter.WriteLine(data);
             m_StreamWriter.Flush();
         }
+		public void SendPacket(Packet packet)
+		{
+            string data = packet.ToJson();
+            m_StreamWriter.WriteLine(data);
+            m_StreamWriter.Flush();
+        }
+
+		public void SendPacketUdp(Packet packet)
+		{
+			if(packet.m_Type != PacketType.LOGIN && !m_UdpHandshakeCompleted)
+			{
+				Debug.WriteLine("Tried to send udp packet before handshake completed");
+				return;
+			}
+
+			string data = packet.ToJson();
+			byte[] bytes = Encoding.UTF8.GetBytes(data);
+
+            m_UdpClient.Send(bytes, bytes.Length);
+        }
 
 		public void Login()
 		{
 			LoginPacket packet = new LoginPacket();
-			string data = packet.ToJson();
-			m_StreamWriter.WriteLine(data);
-			m_StreamWriter.Flush();
+			SendPacket(packet);
 		}
 
 		public void SendPosition(Vector2 pos)
 		{
 			PositionPacket packet = new PositionPacket(pos.X, pos.Y);
-            string data = packet.ToJson();
-            m_StreamWriter.WriteLine(data);
-            m_StreamWriter.Flush();
+            SendPacket(packet);
         }
 	}
 }

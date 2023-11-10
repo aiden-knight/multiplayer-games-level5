@@ -3,15 +3,18 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using Multiplayer_Games_Programming_Packet_Library;
+using System.Xml;
 
 namespace Multiplayer_Games_Programming_Server
 {
 	internal class Server
 	{
 		TcpListener m_TcpListener;
+		UdpClient m_UdpListener;
 
 		int m_ID;
 		ConcurrentDictionary<int, ConnectedClient> m_Clients;
+		ConcurrentDictionary<int, ConnectedClient> m_UdpPortToClient;
 		bool m_running;
 
 		object m_ConsoleLock = new object();
@@ -20,8 +23,10 @@ namespace Multiplayer_Games_Programming_Server
 		{
 			IPAddress ip = IPAddress.Parse(ipAddress);
 			m_TcpListener = new TcpListener(ip, port);
+			m_UdpListener = new UdpClient(port);
 
 			m_Clients = new ConcurrentDictionary<int, ConnectedClient>();
+            m_UdpPortToClient = new ConcurrentDictionary<int, ConnectedClient>();
 			m_ID = 0;
 			m_running = false;
 		}
@@ -33,6 +38,7 @@ namespace Multiplayer_Games_Programming_Server
                 m_TcpListener.Start();
                 Console.WriteLine("Server Started....");
 				m_running = true;
+				UDPListen();
 
 				while(m_running)
 				{
@@ -81,37 +87,69 @@ namespace Multiplayer_Games_Programming_Server
                 string packetJSON = m_Clients[ID].Read();
 
                 Packet? p = Packet.Deserialize(packetJSON);
-                if (p != null)
-                {
-					PacketType type = p.m_Type;
-					switch (type)
-					{
-						case PacketType.MESSAGE:
-                            string message = ((MessagePacket)p).message;
+				if (p == null) continue;
 
-                            lock (m_ConsoleLock)
-                            {
-                                Console.WriteLine(message);
-                            }
-						break;
-						case PacketType.LOGIN:
-							LoginPacket loginPacket = new LoginPacket(ID);
-							m_Clients[ID].SendPacket(loginPacket);
-						break;
-						case PacketType.POSITION:
-							PositionPacket posPacket = (PositionPacket)p;
-							foreach(ConnectedClient client in m_Clients.Values)
-							{
-								if(client.m_ID == ID)continue;
-								client.SendPacket(posPacket);
-							}
-						break;
-                    }
-                }
+				PacketType type = p.m_Type;
+				switch (type)
+				{
+					case PacketType.MESSAGE:
+						string message = ((MessagePacket)p).message;
+
+						lock (m_ConsoleLock)
+						{
+							Console.WriteLine(message);
+						}
+					break;
+					case PacketType.LOGIN:
+						LoginPacket loginPacket = new LoginPacket(ID);
+						m_Clients[ID].SendPacket(loginPacket);
+					break;
+					case PacketType.POSITION:
+						PositionPacket posPacket = (PositionPacket)p;
+						foreach(ConnectedClient client in m_Clients.Values)
+						{
+							if(client.m_ID == ID)continue;
+							client.SendPacket(posPacket);
+						}
+					break;
+				}
             }
 			
 			m_Clients[ID].Close();
 			m_Clients.TryRemove(ID, out _);
 		}
-	}
+
+        async Task UDPListen()
+        {
+            while (m_running)
+            {
+                UdpReceiveResult receiveResult = await m_UdpListener.ReceiveAsync();
+                byte[] receivedData = receiveResult.Buffer;
+
+                string packetJSON = Encoding.UTF8.GetString(receivedData, 0, receivedData.Length);
+                
+				Packet? p = Packet.Deserialize(packetJSON);
+				if (p == null) continue;
+
+				int port = receiveResult.RemoteEndPoint.Port;
+				ConnectedClient client;
+				if(m_UdpPortToClient.ContainsKey(port)) client = m_UdpPortToClient[port];
+
+				PacketType type = p.m_Type;
+				switch (type)
+				{
+					case PacketType.LOGIN:
+                        LoginPacket loginPacket = (LoginPacket)p;
+						client = m_Clients[loginPacket.ID];
+
+                        m_UdpPortToClient[port] = client;
+						client.SetEndPoint(receiveResult.RemoteEndPoint);
+                        client.SendPacketUdp(m_UdpListener, loginPacket);
+                    break;
+				}
+            }
+
+            m_UdpListener.Close();
+        }
+    }
 }
