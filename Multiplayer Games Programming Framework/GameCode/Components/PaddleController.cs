@@ -13,7 +13,7 @@ namespace Multiplayer_Games_Programming_Framework
 		Vector2 m_PriorInput;
 		public PaddleController(GameObject gameObject) : base(gameObject)
 		{
-			m_Speed = 10;
+			m_Speed = 10 * Constants.m_ScalarHeight;
 		}
 
 		protected override void Start(float deltaTime)

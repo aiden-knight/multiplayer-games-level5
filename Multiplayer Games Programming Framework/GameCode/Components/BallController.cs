@@ -20,7 +20,8 @@ namespace Multiplayer_Games_Programming_Framework
 		}
 		public void Init(float speed, Vector2 direction)
 		{
-			m_Speed = speed;
+			float modifier = (Constants.m_ScalarHeight + Constants.m_ScalarWidth) / 2.0f;
+			m_Speed = speed * modifier;
 			m_InitDirection = direction;
 		}
 

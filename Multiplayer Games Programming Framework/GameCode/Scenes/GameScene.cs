@@ -38,23 +38,23 @@ namespace Multiplayer_Games_Programming_Framework
 			float screenWidth = Constants.m_ScreenWidth;
 			float screenHeight = Constants.m_ScreenHeight;
 
-			m_Ball = GameObject.Instantiate<BallGO>(this, new Transform(new Vector2(screenWidth / 2, screenHeight / 2), new Vector2(1, 1), 0));
+			m_Ball = GameObject.Instantiate<BallGO>(this, new Transform(new Vector2(screenWidth / 2, screenHeight / 2), new Vector2(Constants.m_ScalarWidth, Constants.m_ScalarHeight), 0));
 			m_BallController = m_Ball.GetComponent<BallControllerComponent>();
 
 			if (NetworkManager.m_Instance.m_playerID == 0)
 			{
-				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100, 500), new Vector2(5, 20), 0));
-				m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
+				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100 * Constants.m_ScalarWidth, 500 * Constants.m_ScalarHeight), new Vector2(5 * Constants.m_ScalarWidth, 20 * Constants.m_ScalarHeight), 0));
+                m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
 
-				m_RemotePaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - 100, 500), new Vector2(5, 20), 0));
-				m_RemotePaddle.AddComponent(new PaddleNetworkController(m_RemotePaddle, 1));
+				m_RemotePaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - (100 * Constants.m_ScalarWidth), 500 * Constants.m_ScalarHeight), new Vector2(5 * Constants.m_ScalarWidth, 20 * Constants.m_ScalarHeight), 0));
+                m_RemotePaddle.AddComponent(new PaddleNetworkController(m_RemotePaddle, 1));
 			}
 			else
 			{
-				m_RemotePaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100, 500), new Vector2(5, 20), 0));
+				m_RemotePaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100*Constants.m_ScalarWidth, 500*Constants.m_ScalarHeight), new Vector2(5 * Constants.m_ScalarWidth, 20 * Constants.m_ScalarHeight), 0));
 				m_RemotePaddle.AddComponent(new PaddleNetworkController(m_RemotePaddle, 0));
 
-				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - 100, 500), new Vector2(5, 20), 0));
+				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - (100 * Constants.m_ScalarWidth), 500 * Constants.m_ScalarHeight), new Vector2(5 * Constants.m_ScalarWidth, 20 * Constants.m_ScalarHeight), 0));
 				m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
 			}
 
@@ -69,10 +69,10 @@ namespace Multiplayer_Games_Programming_Framework
 
 			Vector2[] wallScales = new Vector2[]
 			{
-				new Vector2(screenWidth / 10, 10), //top
-				new Vector2(10, screenHeight/10), //right
-				new Vector2(screenWidth/10, 10), //bottom
-				new Vector2(10, screenHeight/10) //left
+				new Vector2(screenWidth/10, Constants.m_ScalarHeight*10), //top
+				new Vector2(Constants.m_ScalarWidth*10, screenHeight/10), //right
+				new Vector2(screenWidth/10, Constants.m_ScalarHeight*10), //bottom
+				new Vector2(Constants.m_ScalarWidth*10, screenHeight/10) //left
 			};
 
 			for (int i = 0; i < 4; i++)
