@@ -64,6 +64,8 @@ namespace Multiplayer_Games_Programming_Framework.Core
         /// </summary>
         public List<Action<Vector2>> m_PositionActions;
 
+		public Action m_PlayAction;
+
 		NetworkManager()
 		{
 			m_TcpClient = new TcpClient();
@@ -140,6 +142,9 @@ namespace Multiplayer_Games_Programming_Framework.Core
 							PositionPacket posPacket = (PositionPacket)p;
 							Vector2 pos = new Vector2(posPacket.x, posPacket.y);
                             PositionEvent?.Invoke(this, new PositionEventArgs(pos));
+						break;
+						case PacketType.PLAY:
+							m_PlayAction?.Invoke();
 						break;
                     }
 				}

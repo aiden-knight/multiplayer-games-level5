@@ -13,6 +13,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
 		POSITION,
 		LOGIN,
         GAME_READY,
+        PLAY,
 	}
 
     public class MessagePacket : Packet
@@ -74,6 +75,14 @@ namespace Multiplayer_Games_Programming_Packet_Library
         }
     }
 
+    public class PlayPacket : Packet
+    {
+        public PlayPacket()
+        {
+            m_Type = PacketType.PLAY;
+        }
+    }
+
     public class EmptyPacket : Packet
     {
         public EmptyPacket()
@@ -104,6 +113,8 @@ namespace Multiplayer_Games_Programming_Packet_Library
                             return JsonSerializer.Deserialize<LoginPacket>(root.GetRawText(), options);
                         case (byte)PacketType.GAME_READY:
                             return JsonSerializer.Deserialize<GameReadyPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.PLAY:
+                            return JsonSerializer.Deserialize<PlayPacket>(root.GetRawText(), options);
                     }
                 }
             }
@@ -137,7 +148,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
 			return JsonSerializer.Serialize(this, options);
 		}
 
-		/// <summary>
+		/// <summary> 
 		/// Deserializes JSON data
 		/// </summary>
 		/// <param name="json"></param>

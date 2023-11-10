@@ -78,8 +78,9 @@ namespace Multiplayer_Games_Programming_Framework
 
 			PlayButton.Click += (s, a) =>
 			{
-				m_Manager.LoadScene(new GameScene(m_Manager));
+				NetworkManager.m_Instance.SendPacket(new PlayPacket());
 			};
+			NetworkManager.m_Instance.m_PlayAction = Play;
 
 			var childPanel = new Panel();
 			childPanel.GridColumn = 0;
@@ -111,10 +112,22 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			base.Update(deltaTime);
 
-			if(NetworkManager.m_Instance.m_Playable)
+			if(NetworkManager.m_Instance.m_Playable && NetworkManager.m_Instance.m_playerID == 0)
 			{
 				m_Desktop.GetWidgetByID("PlayButton").Enabled = true;
 			}
+
+			if(m_DoPlay)
+			{
+                m_Manager.LoadScene(new GameScene(m_Manager));
+				m_DoPlay = false;
+            }
+		}
+
+		bool m_DoPlay = false;
+		public void Play()
+		{
+			m_DoPlay = true;
 		}
 	}
 }

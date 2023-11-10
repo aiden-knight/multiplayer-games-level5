@@ -113,7 +113,13 @@ namespace Multiplayer_Games_Programming_Server
 							client.SendPacket(posPacket);
 						}
 					break;
-				}
+                    case PacketType.PLAY:
+                        foreach(ConnectedClient client in m_Clients.Values)
+						{
+							client.SendPacket(p);
+						}
+                    break;
+                }
             }
 			
 			m_Clients[ID].Close();
