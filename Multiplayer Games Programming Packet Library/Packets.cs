@@ -62,9 +62,15 @@ namespace Multiplayer_Games_Programming_Packet_Library
 
     public class GameReadyPacket : Packet
     {
+        public int playerID;
         public GameReadyPacket()
         {
             m_Type = PacketType.GAME_READY;
+        }
+        public GameReadyPacket(int playerID)
+        {
+            m_Type = PacketType.GAME_READY;
+            this.playerID = playerID;
         }
     }
 

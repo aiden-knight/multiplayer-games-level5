@@ -46,7 +46,8 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		NetworkStream m_Stream;
 		StreamReader m_StreamReader;
 		StreamWriter m_StreamWriter;
-		public int m_ID { get; private set; }
+		public int m_clientID { get; private set; }
+		public int m_playerID { get; private set; }
 		public bool m_Playable { get; private set; }
 
 		public event EventHandler<PositionEventArgs> PositionEvent;
@@ -68,7 +69,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			m_TcpClient = new TcpClient();
 			m_UdpClient = new UdpClient();
 
-            m_ID = -1;
+            m_clientID = -1;
 			m_Playable = false;
 			m_PositionActions = new List<Action<Vector2>>();
 		}
@@ -127,10 +128,12 @@ namespace Multiplayer_Games_Programming_Framework.Core
 						break;
 						case PacketType.LOGIN:
 							LoginPacket loginPacket = (LoginPacket)p;
-							m_ID = loginPacket.ID;
+							m_clientID = loginPacket.ID;
 							SendPacketUdp(loginPacket);
 						break;
 						case PacketType.GAME_READY:
+							GameReadyPacket gameReadyPacket = (GameReadyPacket)p;
+							m_playerID = gameReadyPacket.playerID;
 							m_Playable = true;
 						break;
 						case PacketType.POSITION:

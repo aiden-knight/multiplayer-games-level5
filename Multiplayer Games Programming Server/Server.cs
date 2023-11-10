@@ -59,10 +59,11 @@ namespace Multiplayer_Games_Programming_Server
 
 					if(m_Clients.Count == 2)
 					{
-						foreach(ConnectedClient connectedClient in m_Clients.Values)
+						int playerCounter = 0;
+						foreach(KeyValuePair<int, ConnectedClient> entry in m_Clients)
 						{
-							GameReadyPacket packet = new GameReadyPacket();
-							connectedClient.SendPacket(packet);
+							GameReadyPacket packet = new GameReadyPacket(playerCounter++);
+							entry.Value.SendPacket(packet);
 						}
 					}
                 }
