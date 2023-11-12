@@ -15,7 +15,7 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
 		{
 			m_Index = index;
             m_Speed = 10;
-            NetworkManager.m_Instance.PositionEvent += new EventHandler<PositionEventArgs>(PositionEvent);
+            NetworkManager.m_Instance.m_PositionActions.TryAdd(0, PositionEvent);
 		}
 
 		protected override void Start(float deltaTime)
@@ -29,9 +29,9 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
             m_Rigidbody.UpdatePosition(m_Position);
         }
 
-		public void PositionEvent(object sender, PositionEventArgs e)
+		public void PositionEvent(Vector2 position)
 		{
-            m_Position = e.position;
+            m_Position = position;
 		}
 	}
 }

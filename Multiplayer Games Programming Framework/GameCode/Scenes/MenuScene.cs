@@ -10,7 +10,8 @@ namespace Multiplayer_Games_Programming_Framework
 	internal class MenuScene : Scene
 	{
 		private Desktop m_Desktop;
-		public MenuScene(SceneManager manager) : base(manager)
+        bool m_DoPlay = false;
+        public MenuScene(SceneManager manager) : base(manager)
 		{
 			manager.m_Game.IsMouseVisible = true;
 		}
@@ -54,7 +55,7 @@ namespace Multiplayer_Games_Programming_Framework
 
 			var LoginButton = new TextButton();
 			LoginButton.Text = "Login";
-			LoginButton.GridRow = 2;
+			LoginButton.GridRow = 1;
 			LoginButton.GridColumn = 1;
 			LoginButton.GridColumnSpan = 2;
 			LoginButton.HorizontalAlignment = HorizontalAlignment.Center;
@@ -62,6 +63,18 @@ namespace Multiplayer_Games_Programming_Framework
 			LoginButton.Width = (Constants.m_ScreenWidth / cols) * LoginButton.GridColumnSpan;
 			LoginButton.Height = (Constants.m_ScreenHeight / rows) * LoginButton.GridRowSpan;
 			grid.Widgets.Add(LoginButton);
+			
+			var JoinLobbyButton = new TextButton();
+			JoinLobbyButton.Text = "Join Lobby";
+			JoinLobbyButton.GridRow = 2;
+			JoinLobbyButton.GridColumn = 1;
+			JoinLobbyButton.GridColumnSpan = 2;
+			JoinLobbyButton.HorizontalAlignment = HorizontalAlignment.Center;
+			JoinLobbyButton.VerticalAlignment = VerticalAlignment.Center;
+			JoinLobbyButton.Width = (Constants.m_ScreenWidth / cols) * JoinLobbyButton.GridColumnSpan;
+            JoinLobbyButton.Height = (Constants.m_ScreenHeight / rows) * JoinLobbyButton.GridRowSpan;
+            JoinLobbyButton.Enabled = false;
+            grid.Widgets.Add(JoinLobbyButton);
 
 			var PlayButton = new TextButton();
 			PlayButton.Text = "Play";
@@ -94,11 +107,19 @@ namespace Multiplayer_Games_Programming_Framework
 				{
 					NetworkManager.m_Instance.Login();
 					LoginButton.Enabled = false;
+					JoinLobbyButton.Enabled = true;
 				}
 				else
 				{
 					Debug.WriteLine("Failed to connect");
 				}
+			};
+
+			JoinLobbyButton.Click += (s, a) =>
+			{
+				JoinLobbyPacket packet = new JoinLobbyPacket();
+				NetworkManager.m_Instance.SendPacket(packet);
+				JoinLobbyButton.Enabled = false;
 			};
 		}
 
@@ -123,8 +144,6 @@ namespace Multiplayer_Games_Programming_Framework
 				m_DoPlay = false;
             }
 		}
-
-		bool m_DoPlay = false;
 		public void Play()
 		{
 			m_DoPlay = true;

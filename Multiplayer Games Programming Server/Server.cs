@@ -19,6 +19,9 @@ namespace Multiplayer_Games_Programming_Server
 
 		object m_ConsoleLock = new object();
 
+		object m_LobbyLock = new object();
+		List<Lobby> m_Lobbies = new List<Lobby>();
+
 		public Server(string ipAddress, int port)
 		{
 			IPAddress ip = IPAddress.Parse(ipAddress);
@@ -117,6 +120,12 @@ namespace Multiplayer_Games_Programming_Server
                         foreach(ConnectedClient client in m_Clients.Values)
 						{
 							client.SendPacket(p);
+						}
+                    break;
+                    case PacketType.JOIN_LOBBY:
+                        lock(m_LobbyLock)
+						{
+							// create or add to lobby
 						}
                     break;
                 }

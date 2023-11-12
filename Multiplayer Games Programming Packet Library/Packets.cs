@@ -14,6 +14,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
 		LOGIN,
         GAME_READY,
         PLAY,
+        JOIN_LOBBY,
 	}
 
     public class MessagePacket : Packet
@@ -82,7 +83,13 @@ namespace Multiplayer_Games_Programming_Packet_Library
             m_Type = PacketType.PLAY;
         }
     }
-
+    public class JoinLobbyPacket : Packet
+    {
+        public JoinLobbyPacket()
+        {
+            m_Type = PacketType.JOIN_LOBBY;
+        }
+    }
     public class EmptyPacket : Packet
     {
         public EmptyPacket()
@@ -115,6 +122,8 @@ namespace Multiplayer_Games_Programming_Packet_Library
                             return JsonSerializer.Deserialize<GameReadyPacket>(root.GetRawText(), options);
                         case (byte)PacketType.PLAY:
                             return JsonSerializer.Deserialize<PlayPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.JOIN_LOBBY:
+                            return JsonSerializer.Deserialize<JoinLobbyPacket>(root.GetRawText(), options);
                     }
                 }
             }

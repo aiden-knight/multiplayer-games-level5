@@ -13,15 +13,6 @@ using System.Threading.Tasks;
 
 namespace Multiplayer_Games_Programming_Framework.Core
 {
-	public class PositionEventArgs : EventArgs
-	{
-		public PositionEventArgs(Vector2 position)
-		{
-			this.position = position;
-		}
-		public Vector2 position;
-	}
-
 	internal class NetworkManager
 	{
 		private static NetworkManager Instance;
@@ -46,24 +37,11 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		NetworkStream m_Stream;
 		StreamReader m_StreamReader;
 		StreamWriter m_StreamWriter;
-		public int m_clientID { get; private set; }
+		int m_clientID;
 		public int m_playerID { get; private set; }
 		public bool m_Playable { get; private set; }
 
-		public event EventHandler<PositionEventArgs> PositionEvent;
-
-        /// <summary>
-        /// Similar to above but easier, would call with
-        /// <code>
-		/// Vector2 data = Vector2.Zero;
-        ///	foreach (var action in m_PositionActions)
-		///	{
-		///		action?.Invoke(data);
-		///	}
-		///	</code>
-        /// </summary>
-        public List<Action<Vector2>> m_PositionActions;
-
+		public Dictionary<int, Action<Vector2>> m_PositionActions;
 		public Action m_PlayAction;
 
 		NetworkManager()
@@ -73,7 +51,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
             m_clientID = -1;
 			m_Playable = false;
-			m_PositionActions = new List<Action<Vector2>>();
+			m_PositionActions = new Dictionary<int, Action<Vector2>>();
 		}
 
 		public bool Connect(string ip, int port)
@@ -141,7 +119,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 						case PacketType.POSITION:
 							PositionPacket posPacket = (PositionPacket)p;
 							Vector2 pos = new Vector2(posPacket.x, posPacket.y);
-                            PositionEvent?.Invoke(this, new PositionEventArgs(pos));
+							m_PositionActions[0]?.Invoke(pos);
 						break;
 						case PacketType.PLAY:
 							m_PlayAction?.Invoke();
