@@ -60,11 +60,11 @@ namespace Multiplayer_Games_Programming_Framework
             onStart?.Invoke(deltaTime);
             onStart = null;
 
-            if(m_World != null)
-                m_World.Step(deltaTime);
-
             onUpdate?.Invoke(deltaTime);
             onLateUpdate?.Invoke(deltaTime);
+
+            if(m_World != null)
+                m_World.Step(deltaTime);
         }
 
         public virtual void Draw(float deltaTime)

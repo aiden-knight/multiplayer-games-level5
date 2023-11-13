@@ -82,15 +82,18 @@ namespace Multiplayer_Games_Programming_Server
 			m_running = false;
 			
 			m_TcpListener.Stop();
+			m_UdpListener.Close();
 		}
 
 		private void ClientMethod(int ID)
 		{
             while (m_running)
 			{
-                string packetJSON = m_Clients[ID].Read();
+				string? json = m_Clients[ID].Read();
+				if (json == null) break; // connectioned closed results in null packet
 
-                Packet? p = Packet.Deserialize(packetJSON);
+                Packet? p = Packet.Deserialize(json);
+
 				if (p == null) continue;
 
 				PacketType type = p.m_Type;
@@ -125,14 +128,52 @@ namespace Multiplayer_Games_Programming_Server
                     case PacketType.JOIN_LOBBY:
                         lock(m_LobbyLock)
 						{
-							// create or add to lobby
+							bool foundLobby = false;
+							foreach (Lobby lobby in m_Lobbies)
+							{
+								if (lobby.IsFull()) continue;
+								foundLobby = true;
+
+								lobby.AddClient(m_Clients[ID]);
+								m_Clients[ID].m_lobby = lobby;
+							}
+
+							if(!foundLobby)
+							{
+								Lobby lobby = new Lobby(2);
+                                m_Lobbies.Add(lobby);
+
+								lobby.AddClient(m_Clients[ID]);
+                                m_Clients[ID].m_lobby = lobby;
+							}
 						}
                     break;
                 }
             }
+
+			ConnectedClient? disconnectedClient;
+			m_Clients.TryRemove(ID, out disconnectedClient);
+
+			if (disconnectedClient == null) return;
+
+			m_UdpPortToClient.TryRemove(disconnectedClient.m_udpEndPoint.Port, out _);
+
+			if(disconnectedClient.m_lobby != null)
+			{
+				Lobby lobby = disconnectedClient.m_lobby;
+                lock (m_LobbyLock)
+                {
+					lobby.RemoveClient(disconnectedClient);
+					if(lobby.IsEmpty())
+						m_Lobbies.Remove(lobby);
+                }
+            }
 			
-			m_Clients[ID].Close();
-			m_Clients.TryRemove(ID, out _);
+            disconnectedClient.Close();
+			lock(m_ConsoleLock)
+			{
+                Console.WriteLine("Connection terminated with ID: {0}", ID);
+            }
 		}
 
         async Task UDPListen()

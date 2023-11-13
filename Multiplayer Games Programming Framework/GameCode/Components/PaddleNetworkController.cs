@@ -26,12 +26,12 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
 
         protected override void Update(float deltaTime)
         {
-            m_Rigidbody.UpdatePosition(m_Position);
-        }
+			m_Rigidbody.UpdatePosition(m_Position);
+		}
 
 		public void PositionEvent(Vector2 position)
 		{
             m_Position = position;
-		}
+        }
 	}
 }

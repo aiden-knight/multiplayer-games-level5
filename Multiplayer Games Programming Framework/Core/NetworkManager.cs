@@ -87,54 +87,66 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
         }
 
+		private void ConnectionClosed()
+		{
+
+
+			m_TcpClient.Close();
+            m_UdpClient.Close();
+        }
+
 		private void TcpProcessServerResponse()
 		{
-			try
+			while(m_TcpClient.Connected)
 			{
-				while(m_TcpClient.Connected)
+				string packetJSON;
+
+                try
 				{
-                    string? packetJSON = m_StreamReader.ReadLine();
+                    packetJSON = m_StreamReader.ReadLine();
 					if (packetJSON == null) continue;
-					
-                    Packet? p = Packet.Deserialize(packetJSON);
-					if (p == null) continue;
-                    
-					PacketType type = p.m_Type;
-					switch (type)
-					{
-						case PacketType.MESSAGE:
-                            string message = ((MessagePacket)p).message;
-                            Debug.WriteLine(message);
-						break;
-						case PacketType.LOGIN:
-							LoginPacket loginPacket = (LoginPacket)p;
-							m_clientID = loginPacket.ID;
-							SendPacketUdp(loginPacket);
-						break;
-						case PacketType.GAME_READY:
-							GameReadyPacket gameReadyPacket = (GameReadyPacket)p;
-							m_playerID = gameReadyPacket.playerID;
-							m_Playable = true;
-						break;
-						case PacketType.POSITION:
-							PositionPacket posPacket = (PositionPacket)p;
-							Vector2 pos = new Vector2(posPacket.x, posPacket.y);
-							m_PositionActions[0]?.Invoke(pos);
-						break;
-						case PacketType.PLAY:
-							m_PlayAction?.Invoke();
-						break;
-                    }
 				}
-			}
-			catch(Exception ex)
-			{
-				Debug.WriteLine(ex.Message);
+				catch
+				{
+					ConnectionClosed();
+					continue;
+				}
+					
+                Packet? p = Packet.Deserialize(packetJSON);
+				if (p == null) continue;
+                    
+				PacketType type = p.m_Type;
+				switch (type)
+				{
+					case PacketType.MESSAGE:
+                        string message = ((MessagePacket)p).message;
+                        Debug.WriteLine(message);
+					break;
+					case PacketType.LOGIN:
+						LoginPacket loginPacket = (LoginPacket)p;
+						m_clientID = loginPacket.ID;
+						SendPacketUdp(loginPacket);
+					break;
+					case PacketType.GAME_READY:
+						GameReadyPacket gameReadyPacket = (GameReadyPacket)p;
+						m_playerID = gameReadyPacket.playerID;
+						m_Playable = true;
+					break;
+					case PacketType.POSITION:
+						PositionPacket posPacket = (PositionPacket)p;
+						Vector2 pos = new Vector2(posPacket.x, posPacket.y);
+						m_PositionActions[0]?.Invoke(pos);
+					break;
+					case PacketType.PLAY:
+						m_PlayAction?.Invoke();
+					break;
+                }
 			}
 		}
 
         async Task UdpProcessServerResponse()
         {
+            m_UdpHandshakeCompleted = false;
             try
             {
                 while (m_TcpClient.Connected)
@@ -163,13 +175,6 @@ namespace Multiplayer_Games_Programming_Framework.Core
             }
         }
 
-        public void TCPSendMessage(string message)
-		{
-            MessagePacket packet = new MessagePacket(message);
-            string data = packet.ToJson();
-            m_StreamWriter.WriteLine(data);
-            m_StreamWriter.Flush();
-        }
 		public void SendPacket(Packet packet)
 		{
             string data = packet.ToJson();
@@ -190,17 +195,20 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
             m_UdpClient.Send(bytes, bytes.Length);
         }
-
+		// Close network manager listeners on closing of game
+		public void Close()
+		{
+			m_TcpClient.Close();
+			m_UdpClient.Close();
+		}
 		public void Login()
 		{
-			LoginPacket packet = new LoginPacket();
-			SendPacket(packet);
+			SendPacket(new LoginPacket());
 		}
 
 		public void SendPosition(Vector2 pos)
 		{
-			PositionPacket packet = new PositionPacket(pos.X, pos.Y);
-            SendPacket(packet);
+            SendPacket(new PositionPacket(pos.X, pos.Y));
         }
 	}
 }

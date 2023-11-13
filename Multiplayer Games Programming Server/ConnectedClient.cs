@@ -10,12 +10,14 @@ namespace Multiplayer_Games_Programming_Server
 {
 	internal class ConnectedClient
 	{
-        IPEndPoint m_udpEndPoint;
+        public int m_ID { get; private set; }
+        public IPEndPoint m_udpEndPoint { get; private set; }
+
+        public Lobby? m_lobby;
 
 		Socket m_socket;
         StreamReader m_reader;
         StreamWriter m_writer;
-        public int m_ID { get; private set; }
         public ConnectedClient(Socket socket, int ID)
 		{
 			m_socket = socket;
@@ -31,21 +33,9 @@ namespace Multiplayer_Games_Programming_Server
             m_socket.Close();
         }
 
-		public string Read()
+		public string? Read()
 		{
-            try
-            {
-                string? packetJSON = string.Empty;
-                while ((packetJSON = m_reader.ReadLine()) != null)
-                {
-                    return packetJSON;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            return string.Empty;
+            return m_reader.ReadLine();
         }
         public void Send(string message)
 		{
