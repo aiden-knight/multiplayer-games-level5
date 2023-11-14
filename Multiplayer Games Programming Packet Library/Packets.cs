@@ -15,6 +15,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
         GAME_READY,
         PLAY,
         JOIN_LOBBY,
+        BALL,
 	}
 
     public class MessagePacket : Packet
@@ -59,6 +60,24 @@ namespace Multiplayer_Games_Programming_Packet_Library
         {
             m_Type = PacketType.LOGIN;
             this.ID = ID;
+        }
+    }
+
+    public class BallPacket : Packet
+    {
+        public float x, y;
+        public float vX, vY; // velocity
+
+        public BallPacket()
+        {
+            m_Type = PacketType.BALL;
+        }
+
+        public BallPacket(float x, float y, float vX, float vY)
+        {
+            m_Type = PacketType.BALL;
+            this.x = x; this.y = y;
+            this.vX = vX; this.vY = vY;
         }
     }
 
@@ -112,6 +131,8 @@ namespace Multiplayer_Games_Programming_Packet_Library
                     {
                         case (byte)PacketType.EMPTY:
                             return JsonSerializer.Deserialize<EmptyPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.BALL:
+                            return JsonSerializer.Deserialize<BallPacket>(root.GetRawText(), options);
                         case (byte)PacketType.MESSAGE:
                             return JsonSerializer.Deserialize<MessagePacket>(root.GetRawText(), options);
                         case (byte)PacketType.POSITION:

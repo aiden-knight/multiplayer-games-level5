@@ -104,7 +104,11 @@ namespace Multiplayer_Games_Programming_Server
 					case PacketType.POSITION:
 						PositionPacket posPacket = (PositionPacket)p;
                         m_Clients[ID].m_lobby?.SendOthers(posPacket, ID);
-                        break;
+                    break;
+					case PacketType.BALL:
+						BallPacket ballPacket = (BallPacket)p;
+                        m_Clients[ID].m_lobby?.SendOthers(ballPacket, ID);
+                    break;
                     case PacketType.PLAY:
 						m_Clients[ID].m_lobby?.SendAll(p);
                     break;
