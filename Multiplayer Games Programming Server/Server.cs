@@ -103,17 +103,10 @@ namespace Multiplayer_Games_Programming_Server
 					break;
 					case PacketType.POSITION:
 						PositionPacket posPacket = (PositionPacket)p;
-						foreach(ConnectedClient client in m_Clients.Values)
-						{
-							if(client.m_ID == ID)continue;
-							client.SendPacket(posPacket);
-						}
-					break;
+                        m_Clients[ID].m_lobby?.SendOthers(posPacket, ID);
+                        break;
                     case PacketType.PLAY:
-                        foreach(ConnectedClient client in m_Clients.Values)
-						{
-							client.SendPacket(p);
-						}
+						m_Clients[ID].m_lobby?.SendAll(p);
                     break;
                     case PacketType.JOIN_LOBBY:
                         lock(m_LobbyLock)
@@ -140,7 +133,7 @@ namespace Multiplayer_Games_Programming_Server
 								lobby.AddClient(m_Clients[ID]);
                                 m_Clients[ID].m_lobby = lobby;
 							}
-						}
+						} // end lock
                     break;
                 }
             }

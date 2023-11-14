@@ -135,7 +135,8 @@ namespace Multiplayer_Games_Programming_Framework.Core
 					case PacketType.POSITION:
 						PositionPacket posPacket = (PositionPacket)p;
 						Vector2 pos = new Vector2(posPacket.x, posPacket.y);
-						m_PositionActions[0]?.Invoke(pos);
+						if(m_PositionActions.ContainsKey(0))
+							m_PositionActions[0]?.Invoke(pos);
 					break;
 					case PacketType.PLAY:
 						m_PlayAction?.Invoke();

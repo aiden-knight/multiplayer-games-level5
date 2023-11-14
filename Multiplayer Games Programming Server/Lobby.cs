@@ -64,5 +64,24 @@ namespace Multiplayer_Games_Programming_Server
                 m_clients[i].SendPacket(new GameReadyPacket(i));
             }
         }
+
+        public void SendAll(Packet packet)
+        {
+            for (int i = 0; i < m_maxSize; i++)
+            {
+                m_clients[i]?.SendPacket(packet);
+            }
+        }
+
+        public void SendOthers(Packet packet, int senderID)
+        {
+            for (int i = 0; i < m_maxSize; i++)
+            {
+                if (m_clients[i] == null) continue;
+                if (m_clients[i].m_ID == senderID) continue;
+                
+                m_clients[i].SendPacket(packet);
+            }
+        }
     }
 }
