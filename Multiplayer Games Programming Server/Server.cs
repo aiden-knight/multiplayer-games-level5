@@ -59,16 +59,6 @@ namespace Multiplayer_Games_Programming_Server
                     Thread clientThread = new Thread(() => ClientMethod(currentID));
                     clientThread.Name = string.Format("ClientThread ID: {0}", currentID);
                     clientThread.Start();
-
-					if(m_Clients.Count == 2)
-					{
-						int playerCounter = 0;
-						foreach(KeyValuePair<int, ConnectedClient> entry in m_Clients)
-						{
-							GameReadyPacket packet = new GameReadyPacket(playerCounter++);
-							entry.Value.SendPacket(packet);
-						}
-					}
                 }
             }
 			catch(Exception ex)
@@ -136,6 +126,10 @@ namespace Multiplayer_Games_Programming_Server
 
 								lobby.AddClient(m_Clients[ID]);
 								m_Clients[ID].m_lobby = lobby;
+								if(lobby.IsFull())
+								{
+									lobby.SendReady();
+                                }
 							}
 
 							if(!foundLobby)

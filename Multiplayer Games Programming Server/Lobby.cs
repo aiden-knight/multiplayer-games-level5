@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Multiplayer_Games_Programming_Packet_Library;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace Multiplayer_Games_Programming_Server
 
         public bool RemoveClient(ConnectedClient client)
         {
-            for(int i = 0; i < m_maxSize; i++)
+            for (int i = 0; i < m_maxSize; i++)
             {
                 if (m_clients[i] == null) continue;
 
@@ -54,6 +55,14 @@ namespace Multiplayer_Games_Programming_Server
                 }
             }
             return false;
+        }
+
+        public void SendReady()
+        {
+            for (int i = 0; i < m_maxSize; i++)
+            {
+                m_clients[i].SendPacket(new GameReadyPacket(i));
+            }
         }
     }
 }
