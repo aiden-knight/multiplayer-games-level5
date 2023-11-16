@@ -9,6 +9,7 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
 		int m_Index;
 		float m_Speed;
 		Rigidbody m_Rigidbody;
+		bool m_PositionDirty = false;
 		Vector2 m_Position;
 
 		public PaddleNetworkController(GameObject gameObject, int index) : base(gameObject)
@@ -21,17 +22,20 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
 		protected override void Start(float deltaTime)
 		{
 			m_Rigidbody = m_GameObject.GetComponent<Rigidbody>();
-			m_Position = m_Rigidbody.m_Transform.Position;
         }
 
         protected override void Update(float deltaTime)
         {
-			m_Rigidbody.UpdatePosition(m_Position);
+			if(m_PositionDirty)
+			{
+                m_Rigidbody.UpdatePosition(m_Position);
+            }
 		}
 
 		public void PositionEvent(Vector2 position)
 		{
             m_Position = position;
+			m_PositionDirty = true;
         }
 	}
 }

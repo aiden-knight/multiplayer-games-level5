@@ -36,7 +36,11 @@ namespace Multiplayer_Games_Programming_Framework
 		public void StartBall()
 		{
 			m_Rigidbody.m_Body.LinearVelocity = (m_InitDirection * m_Speed);
-			m_Velocity = (m_InitDirection * m_Speed);
+            if (NetworkManager.m_Instance.m_playerID == 0)
+            {
+                m_Velocity = (m_InitDirection * m_Speed);
+                m_Changed = true;
+            }
         }
 
         protected override void Update(float deltaTime)
