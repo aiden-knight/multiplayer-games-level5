@@ -4,11 +4,16 @@ using System.Net;
 using System.Text;
 using Multiplayer_Games_Programming_Packet_Library;
 using System.Xml;
+using System.Security.Cryptography;
 
 namespace Multiplayer_Games_Programming_Server
 {
 	internal class Server
 	{
+		RSACryptoServiceProvider m_RsaProvider;
+		RSAParameters m_PublicKey;
+		RSAParameters m_PrivateKey;
+
 		TcpListener m_TcpListener;
 		UdpClient m_UdpListener;
 
@@ -24,6 +29,10 @@ namespace Multiplayer_Games_Programming_Server
 
 		public Server(string ipAddress, int port)
 		{
+			m_RsaProvider = new RSACryptoServiceProvider(1024);
+			m_PublicKey = m_RsaProvider.ExportParameters(false);
+			m_PrivateKey = m_RsaProvider.ExportParameters(true);
+
 			IPAddress ip = IPAddress.Parse(ipAddress);
 			m_TcpListener = new TcpListener(ip, port);
 			m_UdpListener = new UdpClient(port);
@@ -75,7 +84,110 @@ namespace Multiplayer_Games_Programming_Server
 			m_UdpListener.Close();
 		}
 
-		private void ClientMethod(int ID)
+		void SendPacketEncrypted(ConnectedClient client, Packet packet, bool udp = false)
+		{
+			byte[] encryptedJSON;
+
+            lock (m_RsaProvider)
+			{
+				m_RsaProvider.ImportParameters(client.m_clientPublicKey);
+				string json = packet.ToJson();
+                encryptedJSON = m_RsaProvider.Encrypt(Encoding.UTF8.GetBytes(json), false);
+			}
+
+            EncryptedPacket encryptedPacket = new EncryptedPacket(encryptedJSON);
+            if (udp)
+            {
+                client.SendPacketUdp(m_UdpListener, encryptedPacket);
+            }
+            else
+            {
+                client.SendPacket(encryptedPacket);
+            }
+		}
+
+		void HandlePacket(ConnectedClient client, Packet? p)
+		{
+            if (p == null) return;
+            PacketType type = p.m_Type;
+
+            // Extra check for encrypted packet
+            if (type == PacketType.ENCRYPTED)
+            {
+                byte[] decrypted;
+                EncryptedPacket encryptedPacket = (EncryptedPacket)p;
+
+                lock (m_RsaProvider)
+                {
+                    m_RsaProvider.ImportParameters(m_PrivateKey);
+                    decrypted = m_RsaProvider.Decrypt(encryptedPacket.encryptedPacket, false);
+                }
+                string decryptedJSON = Encoding.UTF8.GetString(decrypted);
+
+                // Set packet and types to new packet
+                p = Packet.Deserialize(decryptedJSON);
+                if (p == null) return;
+
+                type = p.m_Type;
+            }
+
+            switch (type)
+            {
+                case PacketType.MESSAGE:
+                    string message = ((MessagePacket)p).message;
+
+                    lock (m_ConsoleLock)
+                    {
+                        Console.WriteLine(message);
+                    }
+                    break;
+                case PacketType.LOGIN:
+                    client.SetPublicKey(((LoginPacket)p).publicKey);
+
+                    client.SendPacket(new LoginPacket(client.m_ID, m_PublicKey));
+                    break;
+                case PacketType.POSITION:
+                    PositionPacket posPacket = (PositionPacket)p;
+                    client.m_lobby?.SendOthers(posPacket, client.m_ID);
+                    break;
+                case PacketType.BALL:
+                    BallPacket ballPacket = (BallPacket)p;
+                    client.m_lobby?.SendOthers(ballPacket, client.m_ID);
+                    break;
+                case PacketType.PLAY:
+                    client.m_lobby?.SendAll(p);
+                    break;
+                case PacketType.JOIN_LOBBY:
+                    lock (m_LobbyLock)
+                    {
+                        bool foundLobby = false;
+                        foreach (Lobby lobby in m_Lobbies)
+                        {
+                            if (lobby.IsFull()) continue;
+                            foundLobby = true;
+
+                            lobby.AddClient(client);
+                            client.m_lobby = lobby;
+                            if (lobby.IsFull())
+                            {
+                                lobby.SendReady();
+                            }
+                        }
+
+                        if (!foundLobby)
+                        {
+                            Lobby lobby = new Lobby(2);
+                            m_Lobbies.Add(lobby);
+
+                            lobby.AddClient(client);
+                            client.m_lobby = lobby;
+                        }
+                    } // end lock
+                    break;
+            }
+        }
+
+		void ClientMethod(int ID)
 		{
             while (m_running)
 			{
@@ -84,87 +196,10 @@ namespace Multiplayer_Games_Programming_Server
 
                 Packet? p = Packet.Deserialize(json);
 
-				if (p == null) continue;
-
-				PacketType type = p.m_Type;
-				switch (type)
-				{
-					case PacketType.MESSAGE:
-						string message = ((MessagePacket)p).message;
-
-						lock (m_ConsoleLock)
-						{
-							Console.WriteLine(message);
-						}
-					break;
-					case PacketType.LOGIN:
-						LoginPacket loginPacket = new LoginPacket(ID);
-						m_Clients[ID].SendPacket(loginPacket);
-					break;
-					case PacketType.POSITION:
-						PositionPacket posPacket = (PositionPacket)p;
-                        m_Clients[ID].m_lobby?.SendOthers(posPacket, ID);
-                    break;
-					case PacketType.BALL:
-						BallPacket ballPacket = (BallPacket)p;
-                        m_Clients[ID].m_lobby?.SendOthers(ballPacket, ID);
-                    break;
-                    case PacketType.PLAY:
-						m_Clients[ID].m_lobby?.SendAll(p);
-                    break;
-                    case PacketType.JOIN_LOBBY:
-                        lock(m_LobbyLock)
-						{
-							bool foundLobby = false;
-							foreach (Lobby lobby in m_Lobbies)
-							{
-								if (lobby.IsFull()) continue;
-								foundLobby = true;
-
-								lobby.AddClient(m_Clients[ID]);
-								m_Clients[ID].m_lobby = lobby;
-								if(lobby.IsFull())
-								{
-									lobby.SendReady();
-                                }
-							}
-
-							if(!foundLobby)
-							{
-								Lobby lobby = new Lobby(2);
-                                m_Lobbies.Add(lobby);
-
-								lobby.AddClient(m_Clients[ID]);
-                                m_Clients[ID].m_lobby = lobby;
-							}
-						} // end lock
-                    break;
-                }
+                HandlePacket(m_Clients[ID], p);
             }
 
-			ConnectedClient? disconnectedClient;
-			m_Clients.TryRemove(ID, out disconnectedClient);
-
-			if (disconnectedClient == null) return;
-
-			m_UdpPortToClient.TryRemove(disconnectedClient.m_udpEndPoint.Port, out _);
-
-			if(disconnectedClient.m_lobby != null)
-			{
-				Lobby lobby = disconnectedClient.m_lobby;
-                lock (m_LobbyLock)
-                {
-					lobby.RemoveClient(disconnectedClient);
-					if(lobby.IsEmpty())
-						m_Lobbies.Remove(lobby);
-                }
-            }
-			
-            disconnectedClient.Close();
-			lock(m_ConsoleLock)
-			{
-                Console.WriteLine("Connection terminated with ID: {0}", ID);
-            }
+            RemoveClient(ID);
 		}
 
         async Task UDPListen()
@@ -180,24 +215,55 @@ namespace Multiplayer_Games_Programming_Server
 				if (p == null) continue;
 
 				int port = receiveResult.RemoteEndPoint.Port;
-				ConnectedClient client;
-				if(m_UdpPortToClient.ContainsKey(port)) client = m_UdpPortToClient[port];
-
-				PacketType type = p.m_Type;
-				switch (type)
-				{
-					case PacketType.LOGIN:
-                        LoginPacket loginPacket = (LoginPacket)p;
-						client = m_Clients[loginPacket.ID];
+                if (m_UdpPortToClient.ContainsKey(port))
+                {
+                    HandlePacket(m_UdpPortToClient[port], p);
+                }
+                else
+                {
+                    PacketType type = p.m_Type;
+                    if(type == PacketType.UDP_LOGIN)
+                    {
+                        UdpLoginPacket loginPacket = (UdpLoginPacket)p;
+                        ConnectedClient client = m_Clients[loginPacket.ID];
 
                         m_UdpPortToClient[port] = client;
-						client.SetEndPoint(receiveResult.RemoteEndPoint);
+                        client.SetEndPoint(receiveResult.RemoteEndPoint);
                         client.SendPacketUdp(m_UdpListener, loginPacket);
-                    break;
-				}
+                    }
+                }
             }
 
             m_UdpListener.Close();
+        }
+
+        void RemoveClient(int clientID)
+        {
+            // as connection closed handle removing of client data
+            ConnectedClient? disconnectedClient;
+            m_Clients.TryRemove(clientID, out disconnectedClient);
+
+            if (disconnectedClient == null) return;
+            m_UdpPortToClient.TryRemove(disconnectedClient.m_udpEndPoint.Port, out _);
+
+            // if client was in lobby disconnect them
+            if (disconnectedClient.m_lobby != null)
+            {
+                Lobby lobby = disconnectedClient.m_lobby;
+                lock (m_LobbyLock)
+                {
+                    lobby.RemoveClient(disconnectedClient);
+                    if (lobby.IsEmpty())
+                        m_Lobbies.Remove(lobby);
+                }
+            }
+
+            // close up disconnected client
+            disconnectedClient.Close();
+            lock (m_ConsoleLock)
+            {
+                Console.WriteLine("Connection terminated with ID: {0}", clientID);
+            }
         }
     }
 }

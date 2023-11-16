@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using Multiplayer_Games_Programming_Packet_Library;
+using System.Security.Cryptography;
 
 namespace Multiplayer_Games_Programming_Server
 {
@@ -18,6 +19,9 @@ namespace Multiplayer_Games_Programming_Server
 		Socket m_socket;
         StreamReader m_reader;
         StreamWriter m_writer;
+
+        public RSAParameters m_clientPublicKey { get; private set; }
+
         public ConnectedClient(Socket socket, int ID)
 		{
 			m_socket = socket;
@@ -66,17 +70,21 @@ namespace Multiplayer_Games_Programming_Server
             }
         }
 
-        public void SetEndPoint(IPEndPoint endPoint)
-        {
-            m_udpEndPoint = endPoint;
-        }
-
         public void SendPacketUdp(UdpClient udpListener, Packet packet)
         {
             string data = packet.ToJson();
             byte[] bytes = Encoding.UTF8.GetBytes(data);
 
             udpListener.SendAsync(bytes, bytes.Length, m_udpEndPoint);
+        }
+        
+        public void SetPublicKey(RSAParameters publicKey)
+        {
+            m_clientPublicKey = publicKey;
+        }
+        public void SetEndPoint(IPEndPoint endPoint)
+        {
+            m_udpEndPoint = endPoint;
         }
     }
 }

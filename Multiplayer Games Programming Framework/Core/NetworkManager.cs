@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework;
 using System.Net;
 using System.Xml;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace Multiplayer_Games_Programming_Framework.Core
 {
@@ -29,6 +30,11 @@ namespace Multiplayer_Games_Programming_Framework.Core
 				return Instance;
 			}
 		}
+
+		RSACryptoServiceProvider m_RsaProvider;
+		RSAParameters m_PublicKey;
+		RSAParameters m_PrivateKey;
+		RSAParameters m_ServerPublicKey;
 		
 		TcpClient m_TcpClient;
 		UdpClient m_UdpClient;
@@ -47,7 +53,11 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
 		NetworkManager()
 		{
-			m_TcpClient = new TcpClient();
+			m_RsaProvider = new RSACryptoServiceProvider(1024);
+            m_PublicKey = m_RsaProvider.ExportParameters(false);
+            m_PrivateKey = m_RsaProvider.ExportParameters(true);
+
+            m_TcpClient = new TcpClient();
 			m_UdpClient = new UdpClient();
 
             m_clientID = -1;
@@ -88,15 +98,77 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
         }
 
-		private void ConnectionClosed()
+		void ConnectionClosed()
 		{
-
-
 			m_TcpClient.Close();
             m_UdpClient.Close();
         }
 
-		private void TcpProcessServerResponse()
+		void HandlePacket(Packet? p)
+		{
+            if (p == null) return;
+
+            PacketType type = p.m_Type;
+            if (type == PacketType.ENCRYPTED)
+            {
+                byte[] decrypted;
+                EncryptedPacket encryptedPacket = (EncryptedPacket)p;
+
+                lock (m_RsaProvider)
+                {
+                    m_RsaProvider.ImportParameters(m_PrivateKey);
+                    decrypted = m_RsaProvider.Decrypt(encryptedPacket.encryptedPacket, false);
+                }
+                string decryptedJSON = Encoding.UTF8.GetString(decrypted);
+
+                // Set packet and types to new packet
+                p = Packet.Deserialize(decryptedJSON);
+                if (p == null) return;
+
+                type = p.m_Type;
+            }
+
+            switch (type)
+            {
+                case PacketType.MESSAGE:
+                    string message = ((MessagePacket)p).message;
+                    Debug.WriteLine(message);
+                break;
+                case PacketType.GAME_READY:
+                    GameReadyPacket gameReadyPacket = (GameReadyPacket)p;
+                    m_playerID = gameReadyPacket.playerID;
+                    m_Playable = true;
+                break;
+                case PacketType.POSITION:
+                    PositionPacket posPacket = (PositionPacket)p;
+                    Vector2 pos = new Vector2(posPacket.x, posPacket.y);
+                    if (m_PositionActions.ContainsKey(0))
+                        m_PositionActions[0]?.Invoke(pos);
+                break;
+                case PacketType.BALL:
+                    BallPacket ballPacket = (BallPacket)p;
+                    Vector2 ballPos = new Vector2(ballPacket.x, ballPacket.y);
+                    Vector2 ballVelocity = new Vector2(ballPacket.vX, ballPacket.vY);
+                    m_BallAction?.Invoke(ballPos, ballVelocity);
+                break;
+                case PacketType.PLAY:
+                    m_PlayAction?.Invoke();
+                break;
+                case PacketType.LOGIN:
+                    LoginPacket loginPacket = (LoginPacket)p;
+                    m_clientID = loginPacket.ID;
+                    m_ServerPublicKey = loginPacket.publicKey;
+                    SendPacketEncrypted(new MessagePacket("Test Encrypt"));
+                    SendPacketUdp(new UdpLoginPacket(m_clientID));
+                break;
+                case PacketType.UDP_LOGIN:
+                    m_UdpHandshakeCompleted = true;
+                    Debug.WriteLine("UDP Handshake Completed");
+                break;
+            }
+        }
+
+		void TcpProcessServerResponse()
 		{
 			while(m_TcpClient.Connected)
 			{
@@ -114,41 +186,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 				}
 					
                 Packet? p = Packet.Deserialize(packetJSON);
-				if (p == null) continue;
-                    
-				PacketType type = p.m_Type;
-				switch (type)
-				{
-					case PacketType.MESSAGE:
-                        string message = ((MessagePacket)p).message;
-                        Debug.WriteLine(message);
-					break;
-					case PacketType.LOGIN:
-						LoginPacket loginPacket = (LoginPacket)p;
-						m_clientID = loginPacket.ID;
-						SendPacketUdp(loginPacket);
-					break;
-					case PacketType.GAME_READY:
-						GameReadyPacket gameReadyPacket = (GameReadyPacket)p;
-						m_playerID = gameReadyPacket.playerID;
-						m_Playable = true;
-					break;
-					case PacketType.POSITION:
-						PositionPacket posPacket = (PositionPacket)p;
-						Vector2 pos = new Vector2(posPacket.x, posPacket.y);
-						if(m_PositionActions.ContainsKey(0))
-							m_PositionActions[0]?.Invoke(pos);
-					break;
-					case PacketType.BALL:
-						BallPacket ballPacket = (BallPacket)p;
-						Vector2 ballPos = new Vector2(ballPacket.x, ballPacket.y);
-						Vector2 ballVelocity = new Vector2(ballPacket.vX, ballPacket.vY);
-						m_BallAction?.Invoke(ballPos, ballVelocity);
-					break;
-					case PacketType.PLAY:
-						m_PlayAction?.Invoke();
-					break;
-                }
+				HandlePacket(p);
 			}
 		}
 
@@ -165,16 +203,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
                     string packetJSON = Encoding.UTF8.GetString(receivedData, 0, receivedData.Length);
 
                     Packet? p = Packet.Deserialize(packetJSON);
-                    if (p == null) continue;
-
-                    PacketType type = p.m_Type;
-                    switch (type)
-                    {
-                        case PacketType.LOGIN:
-							m_UdpHandshakeCompleted = true;
-							Debug.WriteLine("UDP Handshake Completed");
-                        break;
-                    }
+                    HandlePacket(p);
                 }
             }
             catch (SocketException e)
@@ -183,8 +212,32 @@ namespace Multiplayer_Games_Programming_Framework.Core
             }
         }
 
+		public void SendPacketEncrypted(Packet packet, bool udp = false)
+		{
+            byte[] encryptedJSON;
+
+            lock (m_RsaProvider)
+            {
+                m_RsaProvider.ImportParameters(m_ServerPublicKey);
+                string json = packet.ToJson();
+                encryptedJSON = m_RsaProvider.Encrypt(Encoding.UTF8.GetBytes(json), false);
+            }
+
+            EncryptedPacket encryptedPacket = new EncryptedPacket(encryptedJSON);
+            if (udp)
+            {
+                SendPacketUdp(encryptedPacket);
+            }
+            else
+            {
+                SendPacket(encryptedPacket);
+            }
+        }
+
 		public void SendPacket(Packet packet)
 		{
+            if (!m_TcpClient.Connected) return;
+
             string data = packet.ToJson();
             m_StreamWriter.WriteLine(data);
             m_StreamWriter.Flush();
@@ -192,7 +245,9 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
 		public void SendPacketUdp(Packet packet)
 		{
-			if(packet.m_Type != PacketType.LOGIN && !m_UdpHandshakeCompleted)
+            if (!m_TcpClient.Connected) return;
+
+            if (packet.m_Type != PacketType.LOGIN && !m_UdpHandshakeCompleted)
 			{
 				Debug.WriteLine("Tried to send udp packet before handshake completed");
 				return;
@@ -211,7 +266,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		}
 		public void Login()
 		{
-			SendPacket(new LoginPacket());
+			SendPacket(new LoginPacket(-1, m_PublicKey));
 		}
 
 		public void SendPosition(Vector2 pos)

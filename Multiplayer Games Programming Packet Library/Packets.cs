@@ -12,11 +12,29 @@ namespace Multiplayer_Games_Programming_Packet_Library
 		MESSAGE,
 		POSITION,
 		LOGIN,
+        UDP_LOGIN,
         GAME_READY,
         PLAY,
         JOIN_LOBBY,
         BALL,
+        ENCRYPTED,
 	}
+
+    public class EncryptedPacket : Packet
+    {
+        public byte[] encryptedPacket;
+        public EncryptedPacket()
+        {
+            m_Type = PacketType.ENCRYPTED;
+            encryptedPacket = new byte[0];
+        }
+
+        public EncryptedPacket(byte[] encryptedPacket)
+        {
+            m_Type = PacketType.ENCRYPTED;
+            this.encryptedPacket = encryptedPacket;
+        }
+    }
 
     public class MessagePacket : Packet
     {
@@ -51,14 +69,30 @@ namespace Multiplayer_Games_Programming_Packet_Library
     public class LoginPacket : Packet
     {
         public int ID;
+        public RSAParameters publicKey;
         public LoginPacket()
         {
             m_Type = PacketType.LOGIN;
         }
 
-        public LoginPacket(int ID)
+        public LoginPacket(int ID, RSAParameters publicKey)
         {
             m_Type = PacketType.LOGIN;
+            this.ID = ID;
+            this.publicKey = publicKey;
+        }
+    }
+
+    public class UdpLoginPacket : Packet
+    {
+        public int ID;
+        public UdpLoginPacket()
+        {
+            m_Type = PacketType.UDP_LOGIN;
+        }
+        public UdpLoginPacket(int ID)
+        {
+            m_Type = PacketType.UDP_LOGIN;
             this.ID = ID;
         }
     }
@@ -139,12 +173,16 @@ namespace Multiplayer_Games_Programming_Packet_Library
                             return JsonSerializer.Deserialize<PositionPacket>(root.GetRawText(), options);
                         case (byte)PacketType.LOGIN:
                             return JsonSerializer.Deserialize<LoginPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.UDP_LOGIN:
+                            return JsonSerializer.Deserialize<UdpLoginPacket>(root.GetRawText(), options);
                         case (byte)PacketType.GAME_READY:
                             return JsonSerializer.Deserialize<GameReadyPacket>(root.GetRawText(), options);
                         case (byte)PacketType.PLAY:
                             return JsonSerializer.Deserialize<PlayPacket>(root.GetRawText(), options);
                         case (byte)PacketType.JOIN_LOBBY:
                             return JsonSerializer.Deserialize<JoinLobbyPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.ENCRYPTED:
+                            return JsonSerializer.Deserialize<EncryptedPacket>(root.GetRawText(), options);
                     }
                 }
             }
