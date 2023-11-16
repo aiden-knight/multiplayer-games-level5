@@ -109,7 +109,7 @@ namespace Multiplayer_Games_Programming_Framework
 					break;
 
 				case GameModeState.STARTING:
-					m_BallController.Init(10, new Vector2((float)m_Random.NextDouble(), (float)m_Random.NextDouble()));
+					m_BallController.Init(10, new Vector2(1.0f, 0.0f));
 					m_BallController.StartBall();
 					
 					m_GameModeState = GameModeState.PLAYING;
