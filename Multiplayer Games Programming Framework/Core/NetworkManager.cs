@@ -247,7 +247,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		{
             if (!m_TcpClient.Connected) return;
 
-            if (packet.m_Type != PacketType.LOGIN && !m_UdpHandshakeCompleted)
+            if (packet.m_Type != PacketType.UDP_LOGIN && !m_UdpHandshakeCompleted)
 			{
 				Debug.WriteLine("Tried to send udp packet before handshake completed");
 				return;
