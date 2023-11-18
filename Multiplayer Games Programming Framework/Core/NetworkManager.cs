@@ -108,7 +108,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		{
             if (p == null) return;
 
-            PacketType type = p.m_Type;
+            PacketType type = p.Type;
             if (type == PacketType.ENCRYPTED)
             {
                 byte[] decrypted;
@@ -125,7 +125,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
                 p = Packet.Deserialize(decryptedJSON);
                 if (p == null) return;
 
-                type = p.m_Type;
+                type = p.Type;
             }
 
             switch (type)
@@ -247,7 +247,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		{
             if (!m_TcpClient.Connected) return;
 
-            if (packet.m_Type != PacketType.UDP_LOGIN && !m_UdpHandshakeCompleted)
+            if (packet.Type != PacketType.UDP_LOGIN && !m_UdpHandshakeCompleted)
 			{
 				Debug.WriteLine("Tried to send udp packet before handshake completed");
 				return;

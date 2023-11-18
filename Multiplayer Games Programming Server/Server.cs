@@ -132,7 +132,7 @@ namespace Multiplayer_Games_Programming_Server
 		void HandlePacket(ConnectedClient client, Packet? p)
 		{
             if (p == null) return;
-            PacketType type = p.m_Type;
+            PacketType type = p.Type;
 
             // Extra check for encrypted packet
             if (type == PacketType.ENCRYPTED)
@@ -151,7 +151,7 @@ namespace Multiplayer_Games_Programming_Server
                 p = Packet.Deserialize(decryptedJSON);
                 if (p == null) return;
 
-                type = p.m_Type;
+                type = p.Type;
             }
 
             switch (type)
@@ -251,7 +251,7 @@ namespace Multiplayer_Games_Programming_Server
                 else
                 {
                     // UDP_LOGIN packet that means we can associate client's UDP port with their ID
-                    if(p.m_Type == PacketType.UDP_LOGIN)
+                    if(p.Type == PacketType.UDP_LOGIN)
                     {
                         UdpLoginPacket loginPacket = (UdpLoginPacket)p;
                         ConnectedClient client = m_Clients[loginPacket.ID];

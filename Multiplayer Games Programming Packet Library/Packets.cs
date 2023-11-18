@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿#pragma warning disable IDE0090
+using System.Data.Common;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -25,13 +26,13 @@ namespace Multiplayer_Games_Programming_Packet_Library
         public byte[] encryptedPacket;
         public EncryptedPacket()
         {
-            m_Type = PacketType.ENCRYPTED;
-            encryptedPacket = new byte[0];
+            Type = PacketType.ENCRYPTED;
+            encryptedPacket = Array.Empty<byte>();
         }
 
         public EncryptedPacket(byte[] encryptedPacket)
         {
-            m_Type = PacketType.ENCRYPTED;
+            Type = PacketType.ENCRYPTED;
             this.encryptedPacket = encryptedPacket;
         }
     }
@@ -41,12 +42,12 @@ namespace Multiplayer_Games_Programming_Packet_Library
         public string message;
         public MessagePacket()
         {
-            m_Type = PacketType.MESSAGE;
+            Type = PacketType.MESSAGE;
         }
 
         public MessagePacket(string message)
         {
-            m_Type = PacketType.MESSAGE;
+            Type = PacketType.MESSAGE;
             this.message = message;
         }
     }
@@ -56,12 +57,12 @@ namespace Multiplayer_Games_Programming_Packet_Library
         public float x, y;
         public PositionPacket()
         {
-            m_Type = PacketType.POSITION;
+            Type = PacketType.POSITION;
         }
 
         public PositionPacket(float x, float y)
         {
-            m_Type = PacketType.POSITION;
+            Type = PacketType.POSITION;
             this.x = x;
             this.y = y;
         }
@@ -72,12 +73,12 @@ namespace Multiplayer_Games_Programming_Packet_Library
         public RSAParameters publicKey;
         public LoginPacket()
         {
-            m_Type = PacketType.LOGIN;
+            Type = PacketType.LOGIN;
         }
 
         public LoginPacket(int ID, RSAParameters publicKey)
         {
-            m_Type = PacketType.LOGIN;
+            Type = PacketType.LOGIN;
             this.ID = ID;
             this.publicKey = publicKey;
         }
@@ -88,11 +89,11 @@ namespace Multiplayer_Games_Programming_Packet_Library
         public int ID;
         public UdpLoginPacket()
         {
-            m_Type = PacketType.UDP_LOGIN;
+            Type = PacketType.UDP_LOGIN;
         }
         public UdpLoginPacket(int ID)
         {
-            m_Type = PacketType.UDP_LOGIN;
+            Type = PacketType.UDP_LOGIN;
             this.ID = ID;
         }
     }
@@ -104,12 +105,12 @@ namespace Multiplayer_Games_Programming_Packet_Library
 
         public BallPacket()
         {
-            m_Type = PacketType.BALL;
+            Type = PacketType.BALL;
         }
 
         public BallPacket(float x, float y, float vX, float vY)
         {
-            m_Type = PacketType.BALL;
+            Type = PacketType.BALL;
             this.x = x; this.y = y;
             this.vX = vX; this.vY = vY;
         }
@@ -120,11 +121,11 @@ namespace Multiplayer_Games_Programming_Packet_Library
         public int playerID;
         public GameReadyPacket()
         {
-            m_Type = PacketType.GAME_READY;
+            Type = PacketType.GAME_READY;
         }
         public GameReadyPacket(int playerID)
         {
-            m_Type = PacketType.GAME_READY;
+            Type = PacketType.GAME_READY;
             this.playerID = playerID;
         }
     }
@@ -133,21 +134,21 @@ namespace Multiplayer_Games_Programming_Packet_Library
     {
         public PlayPacket()
         {
-            m_Type = PacketType.PLAY;
+            Type = PacketType.PLAY;
         }
     }
     public class JoinLobbyPacket : Packet
     {
         public JoinLobbyPacket()
         {
-            m_Type = PacketType.JOIN_LOBBY;
+            Type = PacketType.JOIN_LOBBY;
         }
     }
     public class EmptyPacket : Packet
     {
         public EmptyPacket()
         {
-            m_Type = PacketType.EMPTY;
+            Type = PacketType.EMPTY;
         }
     }
 
@@ -199,7 +200,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
     public abstract class Packet
 	{
 		[JsonPropertyName("Type")]
-		public PacketType m_Type { get; protected set; }
+		public PacketType Type { get; protected set; }
 
 		/// <summary>
 		/// Converts instance into JSON
