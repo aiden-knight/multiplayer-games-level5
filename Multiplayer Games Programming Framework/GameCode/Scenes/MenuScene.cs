@@ -93,7 +93,6 @@ namespace Multiplayer_Games_Programming_Framework
 			{
 				NetworkManager.Instance.SendPacket(new PlayPacket());
 			};
-			NetworkManager.Instance.m_PlayAction = Play;
 
 			var childPanel = new Panel();
 			childPanel.GridColumn = 0;
@@ -121,6 +120,9 @@ namespace Multiplayer_Games_Programming_Framework
 				NetworkManager.Instance.SendPacket(packet);
 				JoinLobbyButton.Enabled = false;
 			};
+
+			NetworkManager.Instance.PlayAction = Play;
+			NetworkManager.Instance.EnablePlay = EnablePlayButton;
 		}
 
 		public override void Draw(float deltaTime)
@@ -133,11 +135,6 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			base.Update(deltaTime);
 
-			if(NetworkManager.Instance.Playable && NetworkManager.Instance.PlayerID == 0)
-			{
-				m_Desktop.GetWidgetByID("PlayButton").Enabled = true;
-			}
-
 			if(m_DoPlay)
 			{
                 m_Manager.LoadScene(new GameScene(m_Manager));
@@ -148,5 +145,10 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			m_DoPlay = true;
 		}
+
+		public void EnablePlayButton()
+		{
+            m_Desktop.GetWidgetByID("PlayButton").Enabled = true;
+        }
 	}
 }

@@ -16,7 +16,7 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Components
 		{
 			m_Index = index;
             m_Speed = 10;
-            NetworkManager.Instance.m_PositionActions.TryAdd(0, PositionEvent);
+            NetworkManager.Instance.PositionActions.TryAdd(0, PositionEvent);
 		}
 
 		protected override void Start(float deltaTime)

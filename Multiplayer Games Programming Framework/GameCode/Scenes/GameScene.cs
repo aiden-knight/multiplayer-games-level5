@@ -109,7 +109,7 @@ namespace Multiplayer_Games_Programming_Framework
 					break;
 
 				case GameModeState.STARTING:
-					m_BallController.Init(10, new Vector2(1.0f, 0.0f));
+					m_BallController.Init(20, new Vector2(1.0f, 0.0f));
 					m_BallController.StartBall();
 					
 					m_GameModeState = GameModeState.PLAYING;
@@ -117,7 +117,7 @@ namespace Multiplayer_Games_Programming_Framework
 					break;
 
 				case GameModeState.PLAYING:
-					if(m_GameTimer > 60)
+					if(m_GameTimer > 6000)
 					{
 						m_Ball.Destroy();
 						m_GameModeState = GameModeState.ENDING;

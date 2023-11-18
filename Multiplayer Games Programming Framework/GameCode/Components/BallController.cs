@@ -4,6 +4,7 @@ using nkast.Aether.Physics2D.Dynamics;
 using nkast.Aether.Physics2D.Dynamics.Contacts;
 using Multiplayer_Games_Programming_Framework.Core;
 using Multiplayer_Games_Programming_Packet_Library;
+using System.Diagnostics;
 
 namespace Multiplayer_Games_Programming_Framework
 {
@@ -24,7 +25,7 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			m_Rigidbody = m_GameObject.GetComponent<Rigidbody>();
 			m_Position = m_Transform.Position;
-			NetworkManager.Instance.m_BallAction = PositionVelocityEvent;
+			NetworkManager.Instance.BallAction = PositionVelocityEvent;
 		}
 		public void Init(float speed, Vector2 direction)
 		{
@@ -35,7 +36,7 @@ namespace Multiplayer_Games_Programming_Framework
 
 		public void StartBall()
 		{
-			m_Rigidbody.m_Body.LinearVelocity = (m_InitDirection * m_Speed);
+			m_Rigidbody.m_Body.LinearVelocity = (Vector2.Normalize(m_InitDirection) * m_Speed);
         }
 
         protected override void LateUpdate(float deltaTime)
@@ -54,10 +55,35 @@ namespace Multiplayer_Games_Programming_Framework
         {
             if (NetworkManager.Instance.PlayerID == 0)
             {
-                Vector2 normal = contact.Manifold.LocalNormal;
-				Vector2 velocity = m_Rigidbody.m_Body.LinearVelocity;
-				Vector2 reflection =  Vector2.Reflect(velocity, normal);
-				m_Rigidbody.m_Body.LinearVelocity = reflection * 1.0f;
+                PaddleGO otherObj = other.Body.Tag as PaddleGO;
+
+				if(otherObj != null && contact.Manifold.LocalPoint.Y == 0)
+				{
+                    float yPos = otherObj.m_Transform.Position.Y;
+					float ySize = otherObj.sizeY;
+                    float top = yPos + ySize / 2; 
+                    float bot = yPos - ySize / 2;
+
+                    float ballY = m_Transform.Position.Y;
+					float amount = (ballY - bot) / (top - bot) * (0.8f / 0.5f);
+					amount -= 0.8f;
+
+                    Vector2 normal = contact.Manifold.LocalNormal;
+                    Vector2 velocity = m_Rigidbody.m_Body.LinearVelocity;
+					float direction = velocity.X > 0 ? -1 : 1;
+                    velocity.X = (1 - amount) * direction;
+                    velocity.Y = amount;
+
+                    velocity = m_Speed * Vector2.Normalize(velocity);
+                    m_Rigidbody.m_Body.LinearVelocity = velocity * 1.0f;
+                }
+				else
+                {
+                    Vector2 normal = contact.Manifold.LocalNormal;
+                    Vector2 velocity = m_Rigidbody.m_Body.LinearVelocity;
+                    Vector2 reflection = Vector2.Reflect(velocity, normal) * 1.0f;
+                    m_Rigidbody.m_Body.LinearVelocity = m_Speed * Vector2.Normalize(reflection);
+                }
 
 				Vector2 pos = m_Transform.Position;
 				Vector2 newVelocity = m_Rigidbody.m_Body.LinearVelocity;
