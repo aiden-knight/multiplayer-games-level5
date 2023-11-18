@@ -43,6 +43,9 @@ namespace Multiplayer_Games_Programming_Server
 			m_running = false;
 		}
 
+        /// <summary>
+        /// Starts server on both TCP and UDP
+        /// </summary>
 		public void Start()
 		{
 			try
@@ -50,7 +53,8 @@ namespace Multiplayer_Games_Programming_Server
                 m_TcpListener.Start();
                 Console.WriteLine("Server Started....");
 				m_running = true;
-				UDPListen();
+
+				_ = UDPListen(); // _ to discard instead of awaiting task completion
 
 				while(m_running)
 				{
@@ -74,8 +78,13 @@ namespace Multiplayer_Games_Programming_Server
 			{
 				Console.WriteLine(ex.Message);
 			}
+
+            Stop();
         }
 
+        /// <summary>
+        /// Stops the server
+        /// </summary>
 		public void Stop()
 		{
 			m_running = false;
@@ -84,6 +93,12 @@ namespace Multiplayer_Games_Programming_Server
 			m_UdpListener.Close();
 		}
 
+        /// <summary>
+        /// Sends a packet encrypted with client's public key
+        /// </summary>
+        /// <param name="client">Client we want to send to</param>
+        /// <param name="packet">Packet we want to send</param>
+        /// <param name="udp">Whether to send as udp or not</param>
 		void SendPacketEncrypted(ConnectedClient client, Packet packet, bool udp = false)
 		{
 			byte[] encryptedJSON;
@@ -106,6 +121,10 @@ namespace Multiplayer_Games_Programming_Server
             }
 		}
 
+        /// <summary>
+        /// Handles all types of packet other than UDP_LOGIN
+        /// </summary>
+        /// <param name="client">Client that sent the packet</param>
 		void HandlePacket(ConnectedClient client, Packet? p)
 		{
             if (p == null) return;
@@ -140,23 +159,23 @@ namespace Multiplayer_Games_Programming_Server
                     {
                         Console.WriteLine(message);
                     }
-                    break;
+                break;
                 case PacketType.LOGIN:
                     client.SetPublicKey(((LoginPacket)p).publicKey);
 
                     client.SendPacket(new LoginPacket(client.m_ID, m_PublicKey));
-                    break;
+                break;
                 case PacketType.POSITION:
                     PositionPacket posPacket = (PositionPacket)p;
                     client.m_lobby?.SendOthers(posPacket, client.m_ID);
-                    break;
+                break;
                 case PacketType.BALL:
                     BallPacket ballPacket = (BallPacket)p;
                     client.m_lobby?.SendOthers(ballPacket, client.m_ID);
-                    break;
+                break;
                 case PacketType.PLAY:
                     client.m_lobby?.SendAll(p);
-                    break;
+                break;
                 case PacketType.JOIN_LOBBY:
                     lock (m_LobbyLock)
                     {
@@ -182,17 +201,20 @@ namespace Multiplayer_Games_Programming_Server
                             lobby.AddClient(client);
                             client.m_lobby = lobby;
                         }
-                    } // end lock
-                    break;
+                    } // end lobby lock
+                break;
             }
         }
 
+        /// <summary>
+        /// Method used in thread per client to handle client's TCP responses
+        /// </summary>
 		void ClientMethod(int ID)
 		{
             while (m_running)
 			{
 				string? json = m_Clients[ID].Read();
-				if (json == null) break; // connectioned closed results in null packet
+				if (json == null) break; // only connection closing results in null packet?
 
                 Packet? p = Packet.Deserialize(json);
 
@@ -201,7 +223,9 @@ namespace Multiplayer_Games_Programming_Server
 
             RemoveClient(ID);
 		}
-
+        /// <summary>
+        /// Listens to all UDP traffic coming in to the server's port (so from all clients)
+        /// </summary>
         async Task UDPListen()
         {
             while (m_running)
@@ -214,21 +238,24 @@ namespace Multiplayer_Games_Programming_Server
 				Packet? p = Packet.Deserialize(packetJSON);
 				if (p == null) continue;
 
-				int port = receiveResult.RemoteEndPoint.Port;
+				int port = receiveResult.RemoteEndPoint.Port; // port of client sender
                 if (m_UdpPortToClient.ContainsKey(port))
                 {
+                    // we know what client the sender is so handle packet like normal
                     HandlePacket(m_UdpPortToClient[port], p);
                 }
                 else
                 {
-                    PacketType type = p.m_Type;
-                    if(type == PacketType.UDP_LOGIN)
+                    // UDP_LOGIN packet that means we can associate client's UDP port with their ID
+                    if(p.m_Type == PacketType.UDP_LOGIN)
                     {
                         UdpLoginPacket loginPacket = (UdpLoginPacket)p;
                         ConnectedClient client = m_Clients[loginPacket.ID];
 
                         m_UdpPortToClient[port] = client;
                         client.SetEndPoint(receiveResult.RemoteEndPoint);
+
+                        // send a UDP packet back to confirm and complete the UDP handshake
                         client.SendPacketUdp(m_UdpListener, loginPacket);
                     }
                 }
@@ -236,7 +263,9 @@ namespace Multiplayer_Games_Programming_Server
 
             m_UdpListener.Close();
         }
-
+        /// <summary>
+        /// Handles removing of client after they've disconnected.
+        /// </summary>
         void RemoveClient(int clientID)
         {
             // as connection closed handle removing of client data
