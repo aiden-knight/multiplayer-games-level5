@@ -10,8 +10,8 @@ namespace Multiplayer_Games_Programming_Server
 {
     internal class Lobby
     {
-        ConnectedClient?[] m_clients;
-        int m_maxSize;
+        readonly ConnectedClient?[] m_clients;
+        readonly int m_maxSize;
         int m_clientCount;
         int m_currentFreeIndex;
 
@@ -46,7 +46,7 @@ namespace Multiplayer_Games_Programming_Server
             {
                 if (m_clients[i] == null) continue;
 
-                if (m_clients[i].m_ID == client.m_ID)
+                if (m_clients[i]!.ID == client.ID)
                 {
                     m_clients[i] = null;
                     m_currentFreeIndex = i;
@@ -61,7 +61,7 @@ namespace Multiplayer_Games_Programming_Server
         {
             for (int i = 0; i < m_maxSize; i++)
             {
-                m_clients[i].SendPacket(new GameReadyPacket(i));
+                m_clients[i]?.SendPacket(new GameReadyPacket(i));
             }
         }
 
@@ -78,9 +78,9 @@ namespace Multiplayer_Games_Programming_Server
             for (int i = 0; i < m_maxSize; i++)
             {
                 if (m_clients[i] == null) continue;
-                if (m_clients[i].m_ID == senderID) continue;
+                if (m_clients[i]!.ID == senderID) continue;
                 
-                m_clients[i].SendPacket(packet);
+                m_clients[i]!.SendPacket(packet);
             }
         }
     }

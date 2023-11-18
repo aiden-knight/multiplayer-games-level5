@@ -1,4 +1,6 @@
-﻿using System.Collections.Concurrent;
+﻿#pragma warning disable IDE0090
+
+using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
@@ -10,22 +12,22 @@ namespace Multiplayer_Games_Programming_Server
 {
 	internal class Server
 	{
-		RSACryptoServiceProvider m_RsaProvider;
+		readonly RSACryptoServiceProvider m_RsaProvider;
 		RSAParameters m_PublicKey;
 		RSAParameters m_PrivateKey;
 
-		TcpListener m_TcpListener;
-		UdpClient m_UdpListener;
+        readonly TcpListener m_TcpListener;
+        readonly UdpClient m_UdpListener;
 
 		int m_ID;
-		ConcurrentDictionary<int, ConnectedClient> m_Clients;
-		ConcurrentDictionary<int, ConnectedClient> m_UdpPortToClient;
+        readonly ConcurrentDictionary<int, ConnectedClient> m_Clients;
+        readonly ConcurrentDictionary<int, ConnectedClient> m_UdpPortToClient;
 		bool m_running;
 
-		object m_ConsoleLock = new object();
+        readonly object m_ConsoleLock = new object();
+        readonly object m_LobbyLock = new object();
 
-		object m_LobbyLock = new object();
-		List<Lobby> m_Lobbies = new List<Lobby>();
+        readonly List<Lobby> m_Lobbies = new List<Lobby>();
 
 		public Server(string ipAddress, int port)
 		{
@@ -69,8 +71,10 @@ namespace Multiplayer_Games_Programming_Server
                     }
 
                     m_Clients.TryAdd(currentID, client);
-                    Thread clientThread = new Thread(() => ClientMethod(currentID));
-                    clientThread.Name = string.Format("ClientThread ID: {0}", currentID);
+                    Thread clientThread = new Thread(() => ClientMethod(currentID))
+                    {
+                        Name = string.Format("ClientThread ID: {0}", currentID)
+                    };
                     clientThread.Start();
                 }
             }
@@ -105,7 +109,7 @@ namespace Multiplayer_Games_Programming_Server
 
             lock (m_RsaProvider)
 			{
-				m_RsaProvider.ImportParameters(client.m_clientPublicKey);
+				m_RsaProvider.ImportParameters(client.ClientPublicKey);
 				string json = packet.ToJson();
                 encryptedJSON = m_RsaProvider.Encrypt(Encoding.UTF8.GetBytes(json), false);
 			}
@@ -163,15 +167,15 @@ namespace Multiplayer_Games_Programming_Server
                 case PacketType.LOGIN:
                     client.SetPublicKey(((LoginPacket)p).publicKey);
 
-                    client.SendPacket(new LoginPacket(client.m_ID, m_PublicKey));
+                    client.SendPacket(new LoginPacket(client.ID, m_PublicKey));
                 break;
                 case PacketType.POSITION:
                     PositionPacket posPacket = (PositionPacket)p;
-                    client.m_lobby?.SendOthers(posPacket, client.m_ID);
+                    client.m_lobby?.SendOthers(posPacket, client.ID);
                 break;
                 case PacketType.BALL:
                     BallPacket ballPacket = (BallPacket)p;
-                    client.m_lobby?.SendOthers(ballPacket, client.m_ID);
+                    client.m_lobby?.SendOthers(ballPacket, client.ID);
                 break;
                 case PacketType.PLAY:
                     client.m_lobby?.SendAll(p);
@@ -269,11 +273,13 @@ namespace Multiplayer_Games_Programming_Server
         void RemoveClient(int clientID)
         {
             // as connection closed handle removing of client data
-            ConnectedClient? disconnectedClient;
-            m_Clients.TryRemove(clientID, out disconnectedClient);
+            m_Clients.TryRemove(clientID, out ConnectedClient? disconnectedClient);
+            if (disconnectedClient == null) return; // client already removed?
 
-            if (disconnectedClient == null) return;
-            m_UdpPortToClient.TryRemove(disconnectedClient.m_udpEndPoint.Port, out _);
+            if (disconnectedClient.UdpEndPoint != null)
+            {
+                m_UdpPortToClient.TryRemove(disconnectedClient.UdpEndPoint.Port, out _);
+            }
 
             // if client was in lobby disconnect them
             if (disconnectedClient.m_lobby != null)

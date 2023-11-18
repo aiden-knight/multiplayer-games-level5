@@ -1,4 +1,6 @@
-﻿using System;
+﻿#pragma warning disable IDE0090
+
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -11,21 +13,21 @@ namespace Multiplayer_Games_Programming_Server
 {
 	internal class ConnectedClient
 	{
-        public int m_ID { get; private set; }
-        public IPEndPoint m_udpEndPoint { get; private set; }
+        public int ID { get; private set; }
+        public IPEndPoint? UdpEndPoint { get; private set; }
 
         public Lobby? m_lobby;
 
-		Socket m_socket;
-        StreamReader m_reader;
-        StreamWriter m_writer;
+		readonly Socket m_socket;
+        readonly StreamReader m_reader;
+        readonly StreamWriter m_writer;
 
-        public RSAParameters m_clientPublicKey { get; private set; }
+        public RSAParameters ClientPublicKey { get; private set; }
 
         public ConnectedClient(Socket socket, int ID)
 		{
 			m_socket = socket;
-            m_ID = ID;
+            this.ID = ID;
 
 			NetworkStream stream = new NetworkStream(m_socket, false);
             m_reader = new StreamReader(stream, Encoding.UTF8);
@@ -75,16 +77,16 @@ namespace Multiplayer_Games_Programming_Server
             string data = packet.ToJson();
             byte[] bytes = Encoding.UTF8.GetBytes(data);
 
-            udpListener.SendAsync(bytes, bytes.Length, m_udpEndPoint);
+            udpListener.SendAsync(bytes, bytes.Length, UdpEndPoint);
         }
         
         public void SetPublicKey(RSAParameters publicKey)
         {
-            m_clientPublicKey = publicKey;
+            ClientPublicKey = publicKey;
         }
         public void SetEndPoint(IPEndPoint endPoint)
         {
-            m_udpEndPoint = endPoint;
+            UdpEndPoint = endPoint;
         }
     }
 }
