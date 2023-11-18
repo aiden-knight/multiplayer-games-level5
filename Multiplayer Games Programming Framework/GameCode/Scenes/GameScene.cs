@@ -41,7 +41,7 @@ namespace Multiplayer_Games_Programming_Framework
 			m_Ball = GameObject.Instantiate<BallGO>(this, new Transform(new Vector2(screenWidth / 2, screenHeight / 2), new Vector2(Constants.m_ScalarWidth, Constants.m_ScalarHeight), 0));
 			m_BallController = m_Ball.GetComponent<BallControllerComponent>();
 
-			if (NetworkManager.m_Instance.m_playerID == 0)
+			if (NetworkManager.Instance.PlayerID == 0)
 			{
 				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100 * Constants.m_ScalarWidth, 500 * Constants.m_ScalarHeight), new Vector2(5 * Constants.m_ScalarWidth, 20 * Constants.m_ScalarHeight), 0));
                 m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));

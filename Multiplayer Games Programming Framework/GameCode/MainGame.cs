@@ -29,7 +29,7 @@ namespace Multiplayer_Games_Programming_Framework
         {
             base.OnExiting(sender, args);
 
-            NetworkManager.m_Instance.Close();
+            NetworkManager.Instance.Close();
         }
         protected override void Initialize()
         {

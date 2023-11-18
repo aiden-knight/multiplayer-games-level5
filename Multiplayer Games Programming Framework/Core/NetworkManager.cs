@@ -16,36 +16,36 @@ namespace Multiplayer_Games_Programming_Framework.Core
 {
 	internal class NetworkManager
 	{
-		private static NetworkManager Instance;
+		private static NetworkManager m_Instance;
 
-		public static NetworkManager m_Instance
+		public static NetworkManager Instance
 		{
 			get
 			{
-				if (Instance == null)
+				if (m_Instance == null)
 				{
-					return Instance = new NetworkManager();
+					return m_Instance = new NetworkManager();
 				}
 			
-				return Instance;
+				return m_Instance;
 			}
 		}
 
-		RSACryptoServiceProvider m_RsaProvider;
+		readonly RSACryptoServiceProvider m_RsaProvider;
 		RSAParameters m_PublicKey;
 		RSAParameters m_PrivateKey;
 		RSAParameters m_ServerPublicKey;
 		
-		TcpClient m_TcpClient;
-		UdpClient m_UdpClient;
+		readonly TcpClient m_TcpClient;
+        readonly UdpClient m_UdpClient;
 		bool m_UdpHandshakeCompleted = false;
 
 		NetworkStream m_Stream;
 		StreamReader m_StreamReader;
 		StreamWriter m_StreamWriter;
 		int m_clientID;
-		public int m_playerID { get; private set; }
-		public bool m_Playable { get; private set; }
+		public int PlayerID { get; private set; }
+		public bool Playable { get; private set; }
 
 		public Dictionary<int, Action<Vector2>> m_PositionActions;
 		public Action<Vector2, Vector2> m_BallAction;
@@ -61,7 +61,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 			m_UdpClient = new UdpClient();
 
             m_clientID = -1;
-			m_Playable = false;
+			Playable = false;
 			m_PositionActions = new Dictionary<int, Action<Vector2>>();
 		}
 
@@ -90,10 +90,12 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
 		public void Run()
 		{
-			UdpProcessServerResponse();
+			_ = UdpProcessServerResponse();
 
-			Thread tcpThread = new Thread(new ThreadStart(TcpProcessServerResponse));
-			tcpThread.Name = "TCP THREAD";
+            Thread tcpThread = new Thread(new ThreadStart(TcpProcessServerResponse))
+            {
+                Name = "TCP THREAD"
+            };
             tcpThread.Start();
 
         }
@@ -136,8 +138,8 @@ namespace Multiplayer_Games_Programming_Framework.Core
                 break;
                 case PacketType.GAME_READY:
                     GameReadyPacket gameReadyPacket = (GameReadyPacket)p;
-                    m_playerID = gameReadyPacket.playerID;
-                    m_Playable = true;
+                    PlayerID = gameReadyPacket.playerID;
+                    Playable = true;
                 break;
                 case PacketType.POSITION:
                     PositionPacket posPacket = (PositionPacket)p;

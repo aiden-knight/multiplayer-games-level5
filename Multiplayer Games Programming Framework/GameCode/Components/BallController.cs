@@ -24,7 +24,7 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			m_Rigidbody = m_GameObject.GetComponent<Rigidbody>();
 			m_Position = m_Transform.Position;
-			NetworkManager.m_Instance.m_BallAction = PositionVelocityEvent;
+			NetworkManager.Instance.m_BallAction = PositionVelocityEvent;
 		}
 		public void Init(float speed, Vector2 direction)
 		{
@@ -52,7 +52,7 @@ namespace Multiplayer_Games_Programming_Framework
 
         protected override void OnCollisionEnter(Fixture sender, Fixture other, Contact contact)
         {
-            if (NetworkManager.m_Instance.m_playerID == 0)
+            if (NetworkManager.Instance.PlayerID == 0)
             {
                 Vector2 normal = contact.Manifold.LocalNormal;
 				Vector2 velocity = m_Rigidbody.m_Body.LinearVelocity;
@@ -63,7 +63,7 @@ namespace Multiplayer_Games_Programming_Framework
 				Vector2 newVelocity = m_Rigidbody.m_Body.LinearVelocity;
 
                 BallPacket ballPacket = new BallPacket(pos.X, pos.Y,newVelocity.X, newVelocity.Y);
-				NetworkManager.m_Instance.SendPacket(ballPacket);
+				NetworkManager.Instance.SendPacket(ballPacket);
 			}
 		}
 

@@ -91,9 +91,9 @@ namespace Multiplayer_Games_Programming_Framework
 
 			PlayButton.Click += (s, a) =>
 			{
-				NetworkManager.m_Instance.SendPacket(new PlayPacket());
+				NetworkManager.Instance.SendPacket(new PlayPacket());
 			};
-			NetworkManager.m_Instance.m_PlayAction = Play;
+			NetworkManager.Instance.m_PlayAction = Play;
 
 			var childPanel = new Panel();
 			childPanel.GridColumn = 0;
@@ -103,9 +103,9 @@ namespace Multiplayer_Games_Programming_Framework
 
 			LoginButton.Click += (s, a) =>
 			{
-				if (NetworkManager.m_Instance.Connect("127.0.0.1", 4444))
+				if (NetworkManager.Instance.Connect("127.0.0.1", 4444))
 				{
-					NetworkManager.m_Instance.Login();
+					NetworkManager.Instance.Login();
 					LoginButton.Enabled = false;
 					JoinLobbyButton.Enabled = true;
 				}
@@ -118,7 +118,7 @@ namespace Multiplayer_Games_Programming_Framework
 			JoinLobbyButton.Click += (s, a) =>
 			{
 				JoinLobbyPacket packet = new JoinLobbyPacket();
-				NetworkManager.m_Instance.SendPacket(packet);
+				NetworkManager.Instance.SendPacket(packet);
 				JoinLobbyButton.Enabled = false;
 			};
 		}
@@ -133,7 +133,7 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			base.Update(deltaTime);
 
-			if(NetworkManager.m_Instance.m_Playable && NetworkManager.m_Instance.m_playerID == 0)
+			if(NetworkManager.Instance.Playable && NetworkManager.Instance.PlayerID == 0)
 			{
 				m_Desktop.GetWidgetByID("PlayButton").Enabled = true;
 			}

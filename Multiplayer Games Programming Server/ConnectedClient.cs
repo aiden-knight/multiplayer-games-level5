@@ -1,6 +1,4 @@
-﻿#pragma warning disable IDE0090
-
-using System;
+﻿using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;

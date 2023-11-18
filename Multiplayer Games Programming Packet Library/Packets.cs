@@ -1,5 +1,4 @@
-﻿#pragma warning disable IDE0090
-using System.Data.Common;
+﻿using System.Data.Common;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;

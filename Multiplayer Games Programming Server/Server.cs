@@ -1,6 +1,4 @@
-﻿#pragma warning disable IDE0090
-
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
