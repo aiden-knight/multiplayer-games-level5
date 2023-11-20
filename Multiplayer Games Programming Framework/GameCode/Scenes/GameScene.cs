@@ -18,6 +18,8 @@ namespace Multiplayer_Games_Programming_Framework
 		BallGO m_Ball;
 		PaddleGO m_PlayerPaddle;
 		PaddleGO m_RemotePaddle;
+		TrophyGO m_ScoreTrophy;
+		ScoreTrophy m_ScoreController;
 
 		BallControllerComponent m_BallController;
 
@@ -28,6 +30,7 @@ namespace Multiplayer_Games_Programming_Framework
 		float m_GameTimer;
 		// negative is left score
 		int m_Score = 0;
+		int m_MaxScore = 4;
 
 		public GameScene(SceneManager manager) : base(manager)
 		{
@@ -35,14 +38,16 @@ namespace Multiplayer_Games_Programming_Framework
 		}
 
 		public void ChangeScore(bool add)
-		{
-			if(add)
+		{         
+			if (add)
 			{
+				if (m_Score == m_MaxScore) return;
 				m_Score++;
 			}
 			else
 			{
-				m_Score--;
+                if (m_Score == -m_MaxScore) return;
+                m_Score--;
 			}
 			
 			NetworkManager.Instance.SendPacket(new ScorePacket(m_Score));
@@ -56,7 +61,7 @@ namespace Multiplayer_Games_Programming_Framework
 
 		public void UpdateScoreUI()
 		{
-            Debug.WriteLine(m_Score);
+			m_ScoreController.UpdatePos(m_Score);
         }
 
 		public override void LoadContent()
@@ -87,6 +92,10 @@ namespace Multiplayer_Games_Programming_Framework
 				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(screenWidth - (100 * Constants.m_ScalarWidth), 500 * Constants.m_ScalarHeight), new Vector2(5 * Constants.m_ScalarWidth, 20 * Constants.m_ScalarHeight), 0));
 				m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
 			}
+
+			m_ScoreTrophy = GameObject.Instantiate<TrophyGO>(this, new Transform(new Vector2(screenWidth / 2.0f, 100 * Constants.m_ScalarHeight), new Vector2(Constants.m_ScalarWidth / 8.0f, Constants.m_ScalarHeight / 8.0f), 0));
+			m_ScoreController = new ScoreTrophy(m_ScoreTrophy, m_MaxScore);
+			m_ScoreTrophy.AddComponent(m_ScoreController);
 
 			//Border
 			Vector2[] wallPos = new Vector2[]

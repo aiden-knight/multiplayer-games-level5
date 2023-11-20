@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Multiplayer_Games_Programming_Framework.GameCode.Prefabs
+namespace Multiplayer_Games_Programming_Framework
 {
     internal class TrophyGO : GameObject
     {
@@ -14,8 +14,6 @@ namespace Multiplayer_Games_Programming_Framework.GameCode.Prefabs
             //https://opengameart.org/content/golden-trophy-game-ornament
             SpriteRenderer sr = AddComponent(new SpriteRenderer(this, "golden_trophy"));
             sr.m_DepthLayer = 0;
-
-            //AddComponent(new BallControllerComponent(this));
         }
     }
 }
