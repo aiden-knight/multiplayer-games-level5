@@ -194,6 +194,7 @@ namespace Multiplayer_Games_Programming_Server
                             {
                                 lobby.SendReady();
                             }
+                            break;
                         }
 
                         if (!foundLobby)
