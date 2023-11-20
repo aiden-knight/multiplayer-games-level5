@@ -50,6 +50,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		public Action<Vector2, Vector2> BallAction;
 		public Action PlayAction;
         public Action EnablePlay;
+        public Action<int> ScoreAction;
 
 		NetworkManager()
 		{
@@ -152,6 +153,10 @@ namespace Multiplayer_Games_Programming_Framework.Core
                     Vector2 ballPos = new Vector2(ballPacket.x, ballPacket.y);
                     Vector2 ballVelocity = new Vector2(ballPacket.vX, ballPacket.vY);
                     BallAction?.Invoke(ballPos, ballVelocity);
+                break;
+                case PacketType.SCORE:
+                    ScorePacket scorePacket = (ScorePacket)p;
+                    ScoreAction?.Invoke(scorePacket.score);
                 break;
                 case PacketType.PLAY:
                     PlayAction?.Invoke();

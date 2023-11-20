@@ -18,7 +18,24 @@ namespace Multiplayer_Games_Programming_Packet_Library
         JOIN_LOBBY,
         BALL,
         ENCRYPTED,
-	}
+        SCORE,
+    }
+
+    public class ScorePacket : Packet
+    {
+        public int score;
+        public ScorePacket()
+        {
+            Type = PacketType.SCORE;
+        }
+
+        public ScorePacket(int score)
+        {
+            Type = PacketType.SCORE;
+            this.score = score;
+        }
+    }
+
 
     public class EncryptedPacket : Packet
     {
@@ -183,6 +200,8 @@ namespace Multiplayer_Games_Programming_Packet_Library
                             return JsonSerializer.Deserialize<JoinLobbyPacket>(root.GetRawText(), options);
                         case (byte)PacketType.ENCRYPTED:
                             return JsonSerializer.Deserialize<EncryptedPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.SCORE:
+                            return JsonSerializer.Deserialize<ScorePacket>(root.GetRawText(), options);
                     }
                 }
             }

@@ -168,15 +168,16 @@ namespace Multiplayer_Games_Programming_Server
                     client.SendPacket(new LoginPacket(client.ID, m_PublicKey));
                 break;
                 case PacketType.POSITION:
-                    PositionPacket posPacket = (PositionPacket)p;
-                    client.m_lobby?.SendOthers(posPacket, client.ID);
+                    client.m_lobby?.SendOthers(p, client.ID);
                 break;
                 case PacketType.BALL:
-                    BallPacket ballPacket = (BallPacket)p;
-                    client.m_lobby?.SendOthers(ballPacket, client.ID);
+                    client.m_lobby?.SendOthers(p, client.ID);
                 break;
                 case PacketType.PLAY:
                     client.m_lobby?.SendAll(p);
+                break;
+                case PacketType.SCORE:
+                    client.m_lobby?.SendOthers(p, client.ID);
                 break;
                 case PacketType.JOIN_LOBBY:
                     lock (m_LobbyLock)

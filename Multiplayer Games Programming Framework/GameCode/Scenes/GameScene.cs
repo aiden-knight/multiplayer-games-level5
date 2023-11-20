@@ -7,6 +7,7 @@ using Multiplayer_Games_Programming_Framework.Core;
 using System.Data;
 using System.Diagnostics;
 using Multiplayer_Games_Programming_Framework.GameCode.Components;
+using Multiplayer_Games_Programming_Packet_Library;
 
 namespace Multiplayer_Games_Programming_Framework
 {
@@ -25,15 +26,44 @@ namespace Multiplayer_Games_Programming_Framework
 		GameModeState m_GameModeState;
 
 		float m_GameTimer;
+		// negative is left score
+		int m_Score = 0;
 
 		public GameScene(SceneManager manager) : base(manager)
 		{
 			m_GameModeState = GameModeState.AWAKE;
 		}
 
+		public void ChangeScore(bool add)
+		{
+			if(add)
+			{
+				m_Score++;
+			}
+			else
+			{
+				m_Score--;
+			}
+			
+			NetworkManager.Instance.SendPacket(new ScorePacket(m_Score));
+			UpdateScoreUI();
+		}
+		public void UpdateScore(int score)
+		{
+			m_Score = score;
+            UpdateScoreUI();
+        }
+
+		public void UpdateScoreUI()
+		{
+            Debug.WriteLine(m_Score);
+        }
+
 		public override void LoadContent()
 		{
 			base.LoadContent();
+
+			NetworkManager.Instance.ScoreAction = UpdateScore;
 
 			float screenWidth = Constants.m_ScreenWidth;
 			float screenHeight = Constants.m_ScreenHeight;
@@ -75,13 +105,16 @@ namespace Multiplayer_Games_Programming_Framework
 				new Vector2(Constants.m_ScalarWidth*10, screenHeight/10) //left
 			};
 
+			// walls
 			for (int i = 0; i < 4; i++)
 			{
 				GameObject go = GameObject.Instantiate<GameObject>(this, new Transform(wallPos[i], wallScales[i], 0));
 				SpriteRenderer sr = go.AddComponent(new SpriteRenderer(go, "Square(10x10)"));
 				Rigidbody rb = go.AddComponent(new Rigidbody(go, BodyType.Static, 10, sr.m_Size / 2));
 				rb.CreateRectangle(sr.m_Size.X, sr.m_Size.Y, 0.0f, 1.0f, Vector2.Zero, Constants.GetCategoryByName("Wall"), Constants.GetCategoryByName("All"));
-				go.AddComponent(new ChangeColourOnCollision(go, Color.Red));
+
+				if(i % 2 != 0 && NetworkManager.Instance.PlayerID == 0)
+					go.AddComponent(new ChangeScoreOnCollision(go, i == 3, m_BallController.Reset, ChangeScore));
 				m_GameObjects.Add(go);
 			}
 		}
