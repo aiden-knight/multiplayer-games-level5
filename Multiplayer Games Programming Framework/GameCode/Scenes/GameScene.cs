@@ -22,12 +22,12 @@ namespace Multiplayer_Games_Programming_Framework
 		ScoreTrophy m_ScoreController;
 
 		BallControllerComponent m_BallController;
-
-		Random m_Random = new Random();
 		
 		GameModeState m_GameModeState;
 
 		float m_GameTimer;
+		bool m_GameEnd = false;
+		bool m_LoadMenu = false;
 		// negative is left score
 		int m_Score = 0;
 		int m_MaxScore = 4;
@@ -41,12 +41,10 @@ namespace Multiplayer_Games_Programming_Framework
 		{         
 			if (add)
 			{
-				if (m_Score == m_MaxScore) return;
 				m_Score++;
 			}
 			else
 			{
-                if (m_Score == -m_MaxScore) return;
                 m_Score--;
 			}
 			
@@ -62,6 +60,15 @@ namespace Multiplayer_Games_Programming_Framework
 		public void UpdateScoreUI()
 		{
 			m_ScoreController.UpdatePos(m_Score);
+			if(m_Score >= m_MaxScore || m_Score <= -m_MaxScore)
+			{
+				m_GameEnd = true;
+			}
+        }
+
+		public void LoadMenu()
+		{
+			m_LoadMenu = true;
         }
 
 		public override void LoadContent()
@@ -69,6 +76,7 @@ namespace Multiplayer_Games_Programming_Framework
 			base.LoadContent();
 
 			NetworkManager.Instance.ScoreAction = UpdateScore;
+			NetworkManager.Instance.PlayerLeft = LoadMenu;
 
 			float screenWidth = Constants.m_ScreenWidth;
 			float screenHeight = Constants.m_ScreenHeight;
@@ -76,7 +84,7 @@ namespace Multiplayer_Games_Programming_Framework
 			m_Ball = GameObject.Instantiate<BallGO>(this, new Transform(new Vector2(screenWidth / 2, screenHeight / 2), new Vector2(Constants.m_ScalarWidth, Constants.m_ScalarHeight), 0));
 			m_BallController = m_Ball.GetComponent<BallControllerComponent>();
 
-			if (NetworkManager.Instance.PlayerID == 0)
+			if (NetworkManager.Instance.PlayerOne)
 			{
 				m_PlayerPaddle = GameObject.Instantiate<PaddleGO>(this, new Transform(new Vector2(100 * Constants.m_ScalarWidth, 500 * Constants.m_ScalarHeight), new Vector2(5 * Constants.m_ScalarWidth, 20 * Constants.m_ScalarHeight), 0));
                 m_PlayerPaddle.AddComponent(new PaddleController(m_PlayerPaddle));
@@ -122,7 +130,7 @@ namespace Multiplayer_Games_Programming_Framework
 				Rigidbody rb = go.AddComponent(new Rigidbody(go, BodyType.Static, 10, sr.m_Size / 2));
 				rb.CreateRectangle(sr.m_Size.X, sr.m_Size.Y, 0.0f, 1.0f, Vector2.Zero, Constants.GetCategoryByName("Wall"), Constants.GetCategoryByName("All"));
 
-				if(i % 2 != 0 && NetworkManager.Instance.PlayerID == 0)
+				if(i % 2 != 0 && NetworkManager.Instance.PlayerOne)
 					go.AddComponent(new ChangeScoreOnCollision(go, i == 3, m_BallController.Reset, ChangeScore));
 				m_GameObjects.Add(go);
 			}
@@ -144,6 +152,11 @@ namespace Multiplayer_Games_Programming_Framework
 
 			m_GameTimer += deltaTime;
 
+			if(m_LoadMenu)
+			{
+                m_Manager.LoadScene(new MenuScene(m_Manager));
+            }
+
 			switch (m_GameModeState)
 			{
 				case GameModeState.AWAKE:
@@ -159,7 +172,7 @@ namespace Multiplayer_Games_Programming_Framework
 					break;
 
 				case GameModeState.PLAYING:
-					if(m_GameTimer > 6000)
+					if(m_GameEnd)
 					{
 						m_Ball.Destroy();
 						m_GameModeState = GameModeState.ENDING;

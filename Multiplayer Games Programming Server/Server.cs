@@ -174,6 +174,7 @@ namespace Multiplayer_Games_Programming_Server
                     client.m_lobby?.SendOthers(p, client.ID);
                 break;
                 case PacketType.PLAY:
+                    client.m_lobby?.SetPlaying(true);
                     client.m_lobby?.SendAll(p);
                 break;
                 case PacketType.SCORE:
@@ -206,6 +207,7 @@ namespace Multiplayer_Games_Programming_Server
                             client.m_lobby = lobby;
                         }
                     } // end lobby lock
+                    client.SendPacket(p);
                 break;
             }
         }
@@ -290,6 +292,7 @@ namespace Multiplayer_Games_Programming_Server
                     lobby.RemoveClient(disconnectedClient);
                     if (lobby.IsEmpty())
                         m_Lobbies.Remove(lobby);
+
                 }
             }
 

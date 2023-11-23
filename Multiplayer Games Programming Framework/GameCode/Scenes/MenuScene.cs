@@ -123,6 +123,15 @@ namespace Multiplayer_Games_Programming_Framework
 
 			NetworkManager.Instance.PlayAction = Play;
 			NetworkManager.Instance.EnablePlay = EnablePlayButton;
+
+			if(NetworkManager.Instance.Connected())
+			{
+                LoginButton.Enabled = false;
+				if(!NetworkManager.Instance.InLobby)
+					JoinLobbyButton.Enabled = true;
+				if (NetworkManager.Instance.CanPlay)
+					PlayButton.Enabled = true;
+            }
 		}
 
 		public override void Draw(float deltaTime)
@@ -146,9 +155,9 @@ namespace Multiplayer_Games_Programming_Framework
 			m_DoPlay = true;
 		}
 
-		public void EnablePlayButton()
+		public void EnablePlayButton(bool enabled)
 		{
-            m_Desktop.GetWidgetByID("PlayButton").Enabled = true;
+            m_Desktop.GetWidgetByID("PlayButton").Enabled = enabled;
         }
 	}
 }

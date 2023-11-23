@@ -56,7 +56,7 @@ namespace Multiplayer_Games_Programming_Framework
 
         protected override void OnCollisionEnter(Fixture sender, Fixture other, Contact contact)
         {
-			if (NetworkManager.Instance.PlayerID != 0) return;
+			if (!NetworkManager.Instance.PlayerOne) return;
 			GameObject obj = other.Body.Tag as GameObject;
 			if (obj?.GetComponent<ChangeScoreOnCollision>() != null) return;
 

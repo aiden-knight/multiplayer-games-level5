@@ -14,6 +14,8 @@ namespace Multiplayer_Games_Programming_Server
         readonly int m_maxSize;
         int m_clientCount;
         int m_currentFreeIndex;
+        bool m_playing = false;
+        int m_host = 0;
 
         public Lobby(int maxSize)
         {
@@ -40,6 +42,11 @@ namespace Multiplayer_Games_Programming_Server
             // @TODO update clients
         }
 
+        public void SetPlaying(bool playing)
+        {
+            m_playing = playing;
+        }
+
         public bool RemoveClient(ConnectedClient client)
         {
             for (int i = 0; i < m_maxSize; i++)
@@ -51,6 +58,19 @@ namespace Multiplayer_Games_Programming_Server
                     m_clients[i] = null;
                     m_currentFreeIndex = i;
                     m_clientCount--;
+
+                    SendAll(new PlayerLeftPacket());
+                    if (m_clientCount != 0 && m_host == i)
+                    {
+                        for (int j = 0; j < m_maxSize; j++)
+                        {
+                            if (m_clients[j] == null) continue;
+
+                            m_host = j;
+                            break;
+                        }
+                    }
+
                     return true;
                 }
             }
@@ -61,7 +81,7 @@ namespace Multiplayer_Games_Programming_Server
         {
             for (int i = 0; i < m_maxSize; i++)
             {
-                m_clients[i]?.SendPacket(new GameReadyPacket(i));
+                m_clients[i]?.SendPacket(new GameReadyPacket(i, m_host));
             }
         }
 

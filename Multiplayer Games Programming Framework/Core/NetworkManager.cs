@@ -44,13 +44,18 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		StreamReader m_StreamReader;
 		StreamWriter m_StreamWriter;
 		int m_clientID;
-		public int PlayerID { get; private set; }
+		
+        public bool InLobby { get; private set; }
+        public bool CanPlay { get; private set; }
+        int m_playerID;
+        public bool PlayerOne { get; private set; }
 
 		public Dictionary<int, Action<Vector2>> PositionActions;
 		public Action<Vector2, Vector2> BallAction;
 		public Action PlayAction;
-        public Action EnablePlay;
+        public Action<bool> EnablePlay;
         public Action<int> ScoreAction;
+        public Action PlayerLeft;
 
 		NetworkManager()
 		{
@@ -64,6 +69,11 @@ namespace Multiplayer_Games_Programming_Framework.Core
             m_clientID = -1;
 			PositionActions = new Dictionary<int, Action<Vector2>>();
 		}
+
+        public bool Connected()
+        {
+            return m_TcpClient.Connected;
+        }
 
 		public bool Connect(string ip, int port)
 		{
@@ -138,9 +148,17 @@ namespace Multiplayer_Games_Programming_Framework.Core
                 break;
                 case PacketType.GAME_READY:
                     GameReadyPacket gameReadyPacket = (GameReadyPacket)p;
-                    PlayerID = gameReadyPacket.playerID;
-                    if (PlayerID == 0)
-                        EnablePlay?.Invoke();
+                    m_playerID = gameReadyPacket.playerID;
+                    if (m_playerID == gameReadyPacket.hostID)
+                    {
+                        CanPlay = true;
+                        PlayerOne = true;
+                        EnablePlay?.Invoke(CanPlay);
+                    }
+                    else
+                    {
+                        PlayerOne = false;
+                    }
                 break;
                 case PacketType.POSITION:
                     PositionPacket posPacket = (PositionPacket)p;
@@ -160,6 +178,14 @@ namespace Multiplayer_Games_Programming_Framework.Core
                 break;
                 case PacketType.PLAY:
                     PlayAction?.Invoke();
+                break;
+                case PacketType.JOIN_LOBBY:
+                    InLobby = true;
+                break;
+                case PacketType.PLAYER_LEFT:
+                    CanPlay = false;
+                    EnablePlay?.Invoke(CanPlay);
+                    PlayerLeft?.Invoke();
                 break;
                 case PacketType.LOGIN:
                     LoginPacket loginPacket = (LoginPacket)p;

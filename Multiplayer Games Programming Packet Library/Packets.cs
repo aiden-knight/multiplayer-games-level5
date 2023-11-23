@@ -14,6 +14,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
 		LOGIN,
         UDP_LOGIN,
         GAME_READY,
+        PLAYER_LEFT,
         PLAY,
         JOIN_LOBBY,
         BALL,
@@ -135,14 +136,16 @@ namespace Multiplayer_Games_Programming_Packet_Library
     public class GameReadyPacket : Packet
     {
         public int playerID;
+        public int hostID;
         public GameReadyPacket()
         {
             Type = PacketType.GAME_READY;
         }
-        public GameReadyPacket(int playerID)
+        public GameReadyPacket(int playerID, int hostID)
         {
             Type = PacketType.GAME_READY;
             this.playerID = playerID;
+            this.hostID = hostID;
         }
     }
 
@@ -160,6 +163,15 @@ namespace Multiplayer_Games_Programming_Packet_Library
             Type = PacketType.JOIN_LOBBY;
         }
     }
+
+    public class PlayerLeftPacket : Packet
+    {
+        public PlayerLeftPacket()
+        {
+            Type = PacketType.PLAYER_LEFT;
+        }
+    }
+
     public class EmptyPacket : Packet
     {
         public EmptyPacket()
@@ -202,6 +214,8 @@ namespace Multiplayer_Games_Programming_Packet_Library
                             return JsonSerializer.Deserialize<EncryptedPacket>(root.GetRawText(), options);
                         case (byte)PacketType.SCORE:
                             return JsonSerializer.Deserialize<ScorePacket>(root.GetRawText(), options);
+                        case (byte)PacketType.PLAYER_LEFT:
+                            return JsonSerializer.Deserialize<PlayerLeftPacket>(root.GetRawText(), options);
                     }
                 }
             }

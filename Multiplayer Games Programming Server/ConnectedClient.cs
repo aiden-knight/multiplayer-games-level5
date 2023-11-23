@@ -39,7 +39,14 @@ namespace Multiplayer_Games_Programming_Server
 
 		public string? Read()
 		{
-            return m_reader.ReadLine();
+            try
+            {
+                return m_reader.ReadLine();
+            }
+            catch
+            {
+                return null;
+            }   
         }
         public void Send(string message)
 		{
