@@ -9,7 +9,7 @@ namespace Multiplayer_Games_Programming_Framework
 {
 	internal class MenuScene : Scene
 	{
-		private Desktop m_Desktop;
+		Desktop m_Desktop;
         bool m_DoPlay = false;
         public MenuScene(SceneManager manager) : base(manager)
 		{

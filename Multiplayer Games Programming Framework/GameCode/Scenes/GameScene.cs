@@ -8,6 +8,8 @@ using System.Data;
 using System.Diagnostics;
 using Multiplayer_Games_Programming_Framework.GameCode.Components;
 using Multiplayer_Games_Programming_Packet_Library;
+using Myra.Graphics2D.UI;
+using Myra;
 
 namespace Multiplayer_Games_Programming_Framework
 {
@@ -15,7 +17,9 @@ namespace Multiplayer_Games_Programming_Framework
 	{
 		List<GameObject> m_GameObjects = new();
 
-		BallGO m_Ball;
+        Desktop m_Desktop;
+
+        BallGO m_Ball;
 		PaddleGO m_PlayerPaddle;
 		PaddleGO m_RemotePaddle;
 		TrophyGO m_ScoreTrophy;
@@ -71,9 +75,33 @@ namespace Multiplayer_Games_Programming_Framework
 			m_LoadMenu = true;
         }
 
+		void LoadUI()
+        {
+            MyraEnvironment.Game = m_Manager.m_Game;
+
+            var panel = new Panel
+            {
+            };
+
+            m_Desktop = new Desktop();
+            m_Desktop.Root = panel;
+
+            var testText = new Label();
+            testText.Text = "LEFT PLAYER WINS!";
+			testText.Id = "Winner";
+			testText.TextColor = Color.Red;
+			testText.Opacity = 0.0f;
+			//testText.Top = Constants.m_ScreenHeight / 5;
+			//testText.Left = Constants.m_ScreenWidth / 2;
+            testText.HorizontalAlignment = HorizontalAlignment.Center;
+            testText.VerticalAlignment = VerticalAlignment.Center;
+            panel.Widgets.Add(testText);
+        }
 		public override void LoadContent()
 		{
 			base.LoadContent();
+
+			LoadUI();
 
 			NetworkManager.Instance.ScoreAction = UpdateScore;
 			NetworkManager.Instance.PlayerLeft = LoadMenu;
@@ -140,8 +168,12 @@ namespace Multiplayer_Games_Programming_Framework
 		{
 			return "GameScene";
 		}
-
-		protected override World CreateWorld()
+        public override void Draw(float deltaTime)
+        {
+            base.Draw(deltaTime);
+            m_Desktop.Render();
+        }
+        protected override World CreateWorld()
 		{
 			return new World(Constants.m_Gravity);
 		}
@@ -176,14 +208,19 @@ namespace Multiplayer_Games_Programming_Framework
 					{
 						m_Ball.Destroy();
 						m_GameModeState = GameModeState.ENDING;
-                        Debug.WriteLine("Game Over");
+						var widget = m_Desktop.GetWidgetByID("Winner") as Label;
+						widget.Opacity = 1.0f;
+						widget.Text = m_Score > 0 ? "RIGHT PLAYER WINS!" : "LEFT PLAYER WINS!";
+                        m_GameTimer = 0.0f;
                     }
 
 					break;
 
 				case GameModeState.ENDING:
-
-					//Debug.WriteLine("Game Over");
+					if(m_GameTimer > 3.0f)
+					{
+                        m_Manager.LoadScene(new MenuScene(m_Manager));
+                    }
 					break;
 				default:
 					break;
