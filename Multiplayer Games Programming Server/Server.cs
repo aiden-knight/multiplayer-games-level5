@@ -173,6 +173,9 @@ namespace Multiplayer_Games_Programming_Server
                 case PacketType.BALL:
                     client.m_lobby?.SendOthers(p, client.ID);
                 break;
+                case PacketType.PADDLE:
+                    client.m_lobby?.SendOthers(p, client.ID);
+                break;
                 case PacketType.PLAY:
                     client.m_lobby?.SetPlaying(true);
                     client.m_lobby?.SendAll(p);

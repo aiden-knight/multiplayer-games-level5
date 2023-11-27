@@ -51,6 +51,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
         public bool PlayerOne { get; private set; }
 
 		public Dictionary<int, Action<Vector2>> PositionActions;
+		public Dictionary<int, Action<Vector2, float>> PaddleActions;
 		public Action<Vector2, Vector2> BallAction;
 		public Action PlayAction;
         public Action<bool> EnablePlay;
@@ -68,6 +69,7 @@ namespace Multiplayer_Games_Programming_Framework.Core
 
             m_clientID = -1;
 			PositionActions = new Dictionary<int, Action<Vector2>>();
+            PaddleActions = new Dictionary<int, Action<Vector2, float>>();
 		}
 
         public bool Connected()
@@ -165,6 +167,11 @@ namespace Multiplayer_Games_Programming_Framework.Core
                     Vector2 pos = new Vector2(posPacket.x, posPacket.y);
                     if (PositionActions.ContainsKey(0))
                         PositionActions[0]?.Invoke(pos);
+                break;
+                case PacketType.PADDLE:
+                    PaddlePacket paddlePacket = (PaddlePacket)p;
+                    if (PaddleActions.ContainsKey(1))
+                        PaddleActions[1]?.Invoke(new Vector2(paddlePacket.x, paddlePacket.y), paddlePacket.input);
                 break;
                 case PacketType.BALL:
                     BallPacket ballPacket = (BallPacket)p;
@@ -301,10 +308,5 @@ namespace Multiplayer_Games_Programming_Framework.Core
 		{
 			SendPacket(new LoginPacket(-1, m_PublicKey));
 		}
-
-		public void SendPosition(Vector2 pos)
-		{
-            SendPacket(new PositionPacket(pos.X, pos.Y));
-        }
 	}
 }

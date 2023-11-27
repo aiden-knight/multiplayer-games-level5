@@ -31,7 +31,7 @@ namespace Multiplayer_Games_Programming_Framework
 
 			m_Rigidbody.m_Body.LinearVelocity = (m_Transform.Up * input.Y * m_Speed);
 
-			NetworkManager.Instance.SendPosition(m_Transform.Position);
+			NetworkManager.Instance.SendPacket(new PaddlePacket(m_Transform.Position.X, m_Transform.Position.Y, input.Y));
 		}
 	}
 }

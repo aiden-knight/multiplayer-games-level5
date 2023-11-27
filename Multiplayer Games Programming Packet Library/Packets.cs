@@ -18,6 +18,7 @@ namespace Multiplayer_Games_Programming_Packet_Library
         PLAY,
         JOIN_LOBBY,
         BALL,
+        PADDLE,
         ENCRYPTED,
         SCORE,
     }
@@ -37,6 +38,22 @@ namespace Multiplayer_Games_Programming_Packet_Library
         }
     }
 
+    public class PaddlePacket : Packet
+    {
+        public float x, y;
+        public float input;
+        public PaddlePacket()
+        {
+            Type = PacketType.PADDLE;
+        }
+        public PaddlePacket(float x, float y, float input)
+        {
+            Type = PacketType.PADDLE;
+            this.x = x;
+            this.y = y;
+            this.input = input;
+        }
+    }
 
     public class EncryptedPacket : Packet
     {
@@ -216,6 +233,8 @@ namespace Multiplayer_Games_Programming_Packet_Library
                             return JsonSerializer.Deserialize<ScorePacket>(root.GetRawText(), options);
                         case (byte)PacketType.PLAYER_LEFT:
                             return JsonSerializer.Deserialize<PlayerLeftPacket>(root.GetRawText(), options);
+                        case (byte)PacketType.PADDLE:
+                            return JsonSerializer.Deserialize<PaddlePacket>(root.GetRawText(), options);
                     }
                 }
             }
