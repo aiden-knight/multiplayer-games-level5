@@ -3,13 +3,15 @@ using Myra.Graphics2D.UI;
 using nkast.Aether.Physics2D.Dynamics;
 using Multiplayer_Games_Programming_Framework.Core;
 using System.Diagnostics;
+using Multiplayer_Games_Programming_Packet_Library;
 
 namespace Multiplayer_Games_Programming_Framework
 {
 	internal class MenuScene : Scene
 	{
-		private Desktop m_Desktop;
-		public MenuScene(SceneManager manager) : base(manager)
+		Desktop m_Desktop;
+        bool m_DoPlay = false;
+        public MenuScene(SceneManager manager) : base(manager)
 		{
 			manager.m_Game.IsMouseVisible = true;
 		}
@@ -36,7 +38,7 @@ namespace Multiplayer_Games_Programming_Framework
 			};
 
 			int cols = 4;
-			for(int i = 0; i < cols; ++i)
+			for (int i = 0; i < cols; ++i)
 			{
 				grid.ColumnsProportions.Add(new Proportion(ProportionType.Part));
 			}
@@ -53,7 +55,7 @@ namespace Multiplayer_Games_Programming_Framework
 
 			var LoginButton = new TextButton();
 			LoginButton.Text = "Login";
-			LoginButton.GridRow = 2;
+			LoginButton.GridRow = 1;
 			LoginButton.GridColumn = 1;
 			LoginButton.GridColumnSpan = 2;
 			LoginButton.HorizontalAlignment = HorizontalAlignment.Center;
@@ -61,6 +63,18 @@ namespace Multiplayer_Games_Programming_Framework
 			LoginButton.Width = (Constants.m_ScreenWidth / cols) * LoginButton.GridColumnSpan;
 			LoginButton.Height = (Constants.m_ScreenHeight / rows) * LoginButton.GridRowSpan;
 			grid.Widgets.Add(LoginButton);
+			
+			var JoinLobbyButton = new TextButton();
+			JoinLobbyButton.Text = "Join Lobby";
+			JoinLobbyButton.GridRow = 2;
+			JoinLobbyButton.GridColumn = 1;
+			JoinLobbyButton.GridColumnSpan = 2;
+			JoinLobbyButton.HorizontalAlignment = HorizontalAlignment.Center;
+			JoinLobbyButton.VerticalAlignment = VerticalAlignment.Center;
+			JoinLobbyButton.Width = (Constants.m_ScreenWidth / cols) * JoinLobbyButton.GridColumnSpan;
+            JoinLobbyButton.Height = (Constants.m_ScreenHeight / rows) * JoinLobbyButton.GridRowSpan;
+            JoinLobbyButton.Enabled = false;
+            grid.Widgets.Add(JoinLobbyButton);
 
 			var PlayButton = new TextButton();
 			PlayButton.Text = "Play";
@@ -72,31 +86,52 @@ namespace Multiplayer_Games_Programming_Framework
 			PlayButton.Width = (Constants.m_ScreenWidth / cols) * LoginButton.GridColumnSpan;
 			PlayButton.Height = (Constants.m_ScreenHeight / rows) * LoginButton.GridRowSpan;
 			PlayButton.Enabled = false;
+			PlayButton.Id = "PlayButton";
 			grid.Widgets.Add(PlayButton);
 
 			PlayButton.Click += (s, a) =>
 			{
-				m_Manager.LoadScene(new GameScene(m_Manager));
+				NetworkManager.Instance.SendPacket(new PlayPacket());
 			};
 
 			var childPanel = new Panel();
 			childPanel.GridColumn = 0;
 			childPanel.GridRow = 0;
-			
+
 			grid.Widgets.Add(childPanel);
 
 			LoginButton.Click += (s, a) =>
 			{
-				if (NetworkManager.m_Instance.Connect("127.0.0.1", 4444))
+				if (NetworkManager.Instance.Connect("127.0.0.1", 4444))
 				{
-					PlayButton.Enabled = true;
-					NetworkManager.m_Instance.Login();
+					NetworkManager.Instance.Login();
+					LoginButton.Enabled = false;
+					JoinLobbyButton.Enabled = true;
 				}
 				else
 				{
 					Debug.WriteLine("Failed to connect");
 				}
 			};
+
+			JoinLobbyButton.Click += (s, a) =>
+			{
+				JoinLobbyPacket packet = new JoinLobbyPacket();
+				NetworkManager.Instance.SendPacket(packet);
+				JoinLobbyButton.Enabled = false;
+			};
+
+			NetworkManager.Instance.PlayAction = Play;
+			NetworkManager.Instance.EnablePlay = EnablePlayButton;
+
+			if(NetworkManager.Instance.Connected())
+			{
+                LoginButton.Enabled = false;
+				if(!NetworkManager.Instance.InLobby)
+					JoinLobbyButton.Enabled = true;
+				if (NetworkManager.Instance.CanPlay)
+					PlayButton.Enabled = true;
+            }
 		}
 
 		public override void Draw(float deltaTime)
@@ -104,5 +139,25 @@ namespace Multiplayer_Games_Programming_Framework
 			base.Draw(deltaTime);
 			m_Desktop.Render();
 		}
+
+		public override void Update(float deltaTime)
+		{
+			base.Update(deltaTime);
+
+			if(m_DoPlay)
+			{
+                m_Manager.LoadScene(new GameScene(m_Manager));
+				m_DoPlay = false;
+            }
+		}
+		public void Play()
+		{
+			m_DoPlay = true;
+		}
+
+		public void EnablePlayButton(bool enabled)
+		{
+            m_Desktop.GetWidgetByID("PlayButton").Enabled = enabled;
+        }
 	}
 }

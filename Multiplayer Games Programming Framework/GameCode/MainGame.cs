@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Multiplayer_Games_Programming_Framework.Core;
+using System;
 
 namespace Multiplayer_Games_Programming_Framework
 {
@@ -13,7 +14,7 @@ namespace Multiplayer_Games_Programming_Framework
 
         SceneManager m_SceneManager;
 
-		public MainGame()
+        public MainGame()
         {
             m_Graphics = new GraphicsDeviceManager(this);
             m_Graphics.PreferredBackBufferWidth = Constants.m_ScreenWidth;
@@ -21,10 +22,15 @@ namespace Multiplayer_Games_Programming_Framework
 
             IsFixedTimeStep = true;
 
-			Content.RootDirectory = "Content";
+            Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            base.OnExiting(sender, args);
 
+            NetworkManager.Instance.Close();
+        }
         protected override void Initialize()
         {
             base.Initialize();
